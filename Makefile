@@ -25,10 +25,12 @@ debug: $(OUT).elf $(OUT).bin
 		OCD_PID=$$!; \
 		sleep 1; \
 		gdb -x gdb_commands.txt; \
-		echo "Killing OpenOCD (pid $$OCD_PID)..."; \
 		kill $$OCD_PID 2>/dev/null || true; \
 		wait $$OCD_PID 2>/dev/null || true; \
 	'
+
+rescue:
+	st-flash --connect-under-reset --freq=1000 erase
 
 
 clean:

@@ -31,25 +31,29 @@ void wait(volatile uint32_t count) {
   }
 }
 
+//9.8s per flash
+
 int main(void) {
   init_clock();
+
+  while (1);
 
   // Enable clocks
   volatile uint32_t *RCC_AHB4ENR = (uint32_t *)0x580244E0;
   *RCC_AHB4ENR |= 0b1111111111; // Enable GPIOA to GPIOK clocks
  
-  //do a funny
-  *(volatile uint32_t *)0xCC000000 = 0xBEEF;
-  uint32_t res = *(volatile uint32_t *)0xCC000000;
-  if (res != 0xBEEF) {
-      while (1); // Error
-  }
+  // //do a funny
+  // *(volatile uint32_t *)0xCC000000 = 0xBEEF;
+  // uint32_t res = *(volatile uint32_t *)0xCC000000;
+  // if (res != 0xBEEF) {
+  //     while (1); // Error
+  // }
 
   // PI13 = output (LED)
   set_output('I', 13);
 
   while (1) {
       write_pin('I', 13, read_pin('I', 13) ^ 1);
-      wait(1000000);
+      wait(10000000);
   }
 }
