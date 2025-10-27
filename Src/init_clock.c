@@ -232,7 +232,18 @@ void enable_clocks() {
     *rcc_cr = curr;
 
     while ((*rcc_cr & CLK_RDY_MASK) != CLK_RDY_MASK);
+}
 
+void enable_peripheral_clocks() {
+    volatile uint32_t *RCC_AHB3ENR = (uint32_t *)(RCC_REG + 0xD4);
+    *RCC_AHB3ENR |= 1 << 12; // Enable FMC clock
+
+    volatile uint32_t *RCC_AHB4ENR = (uint32_t *)0x580244E0;
+    *RCC_AHB4ENR |= 0b1111111111; // Enable GPIOA to GPIOK clocks
+
+    volatile uint32_t *RCC_APB4ENR = (uint32_t *)(RCC_REG + 0xF4);
+    *RCC_APB4ENR |= 1 << 0; //SYSCFG
+    *RCC_APB4ENR |= 1 << 2; //PWR
 }
 
 void init_clock() {
@@ -244,4 +255,5 @@ void init_clock() {
     configure_pll();
     select_sys_clk(SYS_CLK_PLL1);
     set_dom_ker_clk();
+    enable_peripheral_clocks();
 }

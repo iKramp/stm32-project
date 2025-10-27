@@ -3,7 +3,7 @@ OBJCOPY=arm-none-eabi-objcopy
 CFLAGS=-mcpu=cortex-m7 -mthumb -Og -g -IInc
 LDFLAGS=-TSTM32H750XBHX_FLASH.ld
 
-SRC=Src/main.c Src/syscalls.c Src/sysmem.c Startup/startup_stm32h750xbhx.s
+SRC=Src/main.c Src/gpio.c Src/syscalls.c Src/sysmem.c Startup/startup_stm32h750xbhx.s
 OUT=build
 
 all: $(OUT).elf $(OUT).bin
