@@ -1,8 +1,11 @@
 #include <stdint.h>
+#include "clock.h"
 #include "gpio.h"
+#include "register.h"
 
 //0x52004000 - 0x52004FFF FMC control registers
 #define FMC_BASE 0x52004000
+volatile uint32_t *FMC_BCR1  = (uint32_t *)(FMC_BASE + 0x00);  //bank1 control
 volatile uint32_t *FMC_SDCR1 = (uint32_t *)(FMC_BASE + 0x140); //control
 volatile uint32_t *FMC_SDCR2 = (uint32_t *)(FMC_BASE + 0x144); //control
 volatile uint32_t *FMC_SDTR1 = (uint32_t *)(FMC_BASE + 0x148); //timing
@@ -16,8 +19,11 @@ volatile uint32_t *MEM_ADDR  = (uint32_t *)(0xD0000000);  //SDRAM base address
 
 void set_pin(uint8_t gpio_class, uint8_t pin_num) {
     set_speed(gpio_class, pin_num, 0b11);
+    set_in_pull(gpio_class, pin_num, 0); //no pull
     set_alternate(gpio_class, pin_num, 12);
 }
+
+
 
 void set_sdram_pins() {
     // SDRAM data lines
@@ -78,74 +84,67 @@ void set_sdram_pins() {
     set_pin('H', 3);  // NBL1
 }
 
+void send_sdram_command(uint8_t command, uint16_t auto_refresh_num, uint16_t mode_reg) {
+    set_register(FMC_SDCMR, 0x7FFFFF, 
+        (command & 0b111)               | //command
+        ((auto_refresh_num & 0xF) << 5) | //number of auto-refresh cycles
+        1 << 3                          | //bank 2
+        ((mode_reg & 0x3FFF) << 9)        //mode register definition
+    );
+    wait_micros(1);
+}
+
 void init_sdram() {
     set_sdram_pins();
 
-    uint32_t curr = *FMC_SDCR1;
-    curr &= ~0x7FFF; //clear
-    curr |=
-        (0b01 << 13) | //1 clk tick delay
-        (0b0  << 12) | //no burst mode
-        (0b10 << 10) | //SDCLK = fmc_ker_ck / 2 (100MHz -> 10ns)
-        (0b0  << 9)  | //no write protection
-        (0b10 << 7)  | //CAS 2
-        (0b1  << 6)  | //four internal banks
-        (0b10 << 4)  | //memory bus width 32bits
-        (0b01 << 2)  | //12 row bits
-        (0b00 << 0);   //8 column bits
-    *FMC_SDCR1 = curr;
-    *FMC_SDCR2 = curr;
+    set_register(FMC_SDCR1, 0b11111 << 10, 
+        0b01 << 13 | //RPIPE = 1 clk tick delay    
+        0b1  << 12 | //RBURST = no burst mode
+        0b10 << 10   //SDCLK = fmc_ker_ck / 2 (100MHz -> 10ns)
+    );
+    set_register(FMC_SDCR2, 0x7FF, 
+        0b0 << 9   | //no write protection
+        0b10 << 7  | //CAS 2
+        0b1  << 6  | //four internal banks
+        0b10 << 4  | //memory bus width 32bits
+        0b01 << 2  | //12 row bits
+        0b00 << 0    //8 column bits
+    );
 
-    curr = *FMC_SDTR1;
-    curr &= ~0x0FFFFFFF; //clear
-    curr |=
-        (0b0001 << 24) | //TRCD = 2 cycles
-        (0b0001 << 20) | //TRP = 2 cycles
-        (0b0001 << 16) | //TWR = 2 cycles
-        (0b0110 << 12) | //TRC = 7 cycles
-        (0b0100 << 8)  | //TRAS = 5 cycles
-        (0b0110 << 4)  | //TXSR = 7 cycles
-        (0b0001 << 0);   //TMRD = 2 cycles
-    *FMC_SDTR1 = curr;
-    *FMC_SDTR2 = curr;
+    set_register(FMC_SDTR1, 1 << 12 | 1 << 20,
+        (5 << 12) | //TRC = 6 cycles
+        (1 << 20)   //TRP = 2 cycles
+    );
+    set_register(FMC_SDTR2, 0x0FFFFFFF,
+        1 << 24 | //TRCD = 2 cycles
+        1 << 16 | //TWR = 2 cycles
+        4 << 8  | //TRAS = 5 cycles
+        6 << 4  | //TXSR = 7 cycles
+        1 << 0    //TMRD = 2 cycles
+    );
 
-    curr = *FMC_SDCMR;
-    curr &= ~0x7FFFFF; //clear
-    curr |= 0b001; //clock configuration enable
-    curr |= 1 << 3; //bank 2
-    *FMC_SDCMR = curr;
-    *MEM_ADDR = 1; //dummy write
-    while (*FMC_SDSR & 0x0000001F); //wait until mode bit cleared
-    for (volatile int i = 0; i < 1000; i++);
+    set_register(FMC_BCR1, 0, 1 << 31); //enable fmc
+    wait_micros(100);
+
+    set_register(FMC_SDRTR, 0x7FFF, 1522 << 1);
+
+    send_sdram_command(0b001, 0, 0);
 
     //power up delay
     //40000 clock cycles
     //assume decrement, jump
     //20000 cycles
-    for (volatile int i = 0; i < 80000; i++);
+    for (volatile int i = 0; i < 80000; i++) {
+        __asm__("nop");
+    }
 
-    curr = *FMC_SDCMR;
-    curr &= ~0x7FFFFF; //clear
-    curr |= 0b010; //precharge all command
-    curr |= 1 << 3; //bank 2
-    *FMC_SDCMR = curr;
-    *MEM_ADDR = 1; //dummy write
-    while (*FMC_SDSR & 0x0000001F); //wait until mode bit cleared
-    for (volatile int i = 0; i < 1000; i++);
+    set_register(FMC_SDCMR, 0x7FFFFF, 
+        0b010 | //precharge all command
+        1 << 3  //bank 2
+    );
+    send_sdram_command(0b010, 0, 0);
 
-    curr = *FMC_SDCMR;
-    curr &= ~0x7FFFFF; //clear
-    curr |= 0b011; //auto-refresh command
-    curr |= 1 << 5; //number of auto-refresh cycles = 2
-    curr |= 1 << 3; //bank 2
-    *FMC_SDCMR = curr;
-    *MEM_ADDR = 1; //dummy write
-    while (*FMC_SDSR & 0x0000001F); //wait until mode bit cleared
-    for (volatile int i = 0; i < 1000; i++);
-
-    curr = *FMC_SDCMR;
-    curr &= ~0x7FFFFF; //clear
-    curr |= 0b100; //load mode register
+    send_sdram_command(0b011, 2, 0);
 
     uint32_t mode_reg = 
         (0b010 << 0) | //burst length = 4
@@ -153,15 +152,5 @@ void init_sdram() {
         (0b010 << 4) | //CAS latency = 2
         (0b00  << 7) | //operating mode = standard
         (0b0   << 9);  //write burst mode = programmed burst length
-    curr |= (mode_reg << 9); //mode register
-    curr |= 1 << 3; //bank 2
-    *FMC_SDCMR = curr;
-    *MEM_ADDR = 1; //dummy write
-    while (*FMC_SDSR & 0x0000001F); //wait until mode bit cleared
-    for (volatile int i = 0; i < 1000; i++);
-
-    curr = *FMC_SDRTR;
-    curr &= ~0x7FFF; //clear
-    curr |= 1522 << 1;
-    *FMC_SDRTR = curr;
+    send_sdram_command(0b100, 2, mode_reg);
 }
