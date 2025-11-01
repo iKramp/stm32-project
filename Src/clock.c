@@ -11,6 +11,7 @@
  */
 
 #include "clock.h"
+#include "gpio.h"
 #include "register.h"
 
 #define TARGET_SYS_CLK_MHZ 400 // MHZ
@@ -19,14 +20,7 @@
 
 //10 instructions
 void wait(volatile uint32_t count) {
-  while (count--) {
-    __asm__("nop");
-  }
-}
-
-void wait_micros(volatile uint32_t micros) {
-    const uint32_t FREQ_MHZ = 400;
-    wait(micros * FREQ_MHZ / 6); //some BS through experimentation
+  while (count--);
 }
 
 void reg_read_delay(volatile uint32_t *reg) {
@@ -221,7 +215,8 @@ void enable_clocks() {
 
 void enable_syscfg_clk() {
     volatile uint32_t *RCC_APB4ENR = (uint32_t *)(RCC_REG + 0xF4);
-    *RCC_APB4ENR |= 1 << 0; // SYSCFG
+    *RCC_APB4ENR |= 1 << 1; // SYSCFG
+    // *RCC_APB4ENR |= 1 << 2; // PWR
 }
 
 void change_voltage_scale(uint8_t scale) {
@@ -243,13 +238,11 @@ void change_voltage_scale(uint8_t scale) {
 void enable_peripheral_clocks() {
     volatile uint32_t *RCC_AHB3ENR = (uint32_t *)(RCC_REG + 0xD4);
     *RCC_AHB3ENR |= 1 << 12; // Enable FMC clock
+    reg_read_delay(RCC_AHB3ENR);
 
     volatile uint32_t *RCC_AHB4ENR = (uint32_t *)0x580244E0;
-    *RCC_AHB4ENR |= 0b1111111111; // Enable GPIOA to GPIOK clocks
-
-    volatile uint32_t *RCC_APB4ENR = (uint32_t *)(RCC_REG + 0xF4);
-    *RCC_APB4ENR |= 1 << 0; // SYSCFG
-    *RCC_APB4ENR |= 1 << 2; // PWR
+    *RCC_AHB4ENR |= 0b11111111111; // Enable GPIOA to GPIOK clocks
+    reg_read_delay(RCC_AHB4ENR);
 }
 
 void init_clock() {

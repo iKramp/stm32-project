@@ -23,65 +23,46 @@ void set_pin(uint8_t gpio_class, uint8_t pin_num) {
     set_alternate(gpio_class, pin_num, 12);
 }
 
-
-
 void set_sdram_pins() {
-    // SDRAM data lines
-    set_pin('D', 0);  // D0
-    set_pin('D', 1);  // D1
-    set_pin('D', 8);  // D2
-    set_pin('D', 9);  // D3
-    set_pin('D', 10); // D4
-    set_pin('D', 14); // D5
-    set_pin('D', 15); // D6
-    set_pin('E', 0);  // D7
-    set_pin('E', 1);  // D8
-    set_pin('E', 7);  // D9
-    set_pin('E', 8);  // D10
-    set_pin('E', 9);  // D11
-    set_pin('E', 10); // D12
-    set_pin('E', 11); // D13
-    set_pin('E', 12); // D14
-    set_pin('E', 13); // D15
-    set_pin('E', 14); // D16
-    set_pin('E', 15); // D17
-    set_pin('F', 0);  // D18
-    set_pin('F', 1);  // D19
-    set_pin('F', 2);  // D20
-    set_pin('F', 3);  // D21
-    set_pin('F', 4);  // D22
-    set_pin('F', 5);  // D23
-    set_pin('F', 11); // D24
-    set_pin('F', 12); // D25
-    set_pin('F', 13); // D26
-    set_pin('F', 14); // D27
-    set_pin('F', 15); // D28
-    set_pin('G', 0);  // D29
-    set_pin('G', 1);  // D30
-    set_pin('G', 2);  // D31
-    
-    // Address lines
-    set_pin('G', 3);  // A0
-    set_pin('G', 4);  // A1
-    set_pin('G', 5);  // A2
-    set_pin('G', 8);  // A3
-    set_pin('G', 15); // A4
-    set_pin('H', 5);  // A5
-    set_pin('H', 6);  // A6
-    set_pin('H', 7);  // A7
-    
-    // Control signals
-    set_pin('C', 0);  // SDNWE
-    set_pin('C', 2);  // SDNE0
-    set_pin('C', 3);  // SDCK
-    set_pin('D', 3);  // SDCAS
-    set_pin('D', 4);  // SDRAS
-    set_pin('G', 9);  // SDCKE0
-    set_pin('G', 10); // SDCLK
-    set_pin('G', 12); // BA0
-    set_pin('G', 13); // BA1
-    set_pin('G', 14); // NBL0
-    set_pin('H', 3);  // NBL1
+    set_pin('D', 14);  // D0
+    set_pin('D', 15);  // D1
+    set_pin('D', 0);   // D2
+    set_pin('D', 1);   // D3
+    set_pin('E', 7);   // D4
+    set_pin('E', 8);   // D5
+    set_pin('E', 9);   // D6
+    set_pin('E', 10);  // D7
+    set_pin('E', 11);  // D8
+    set_pin('E', 12);  // D9
+    set_pin('E', 13);  // D10
+    set_pin('E', 14);  // D11
+    set_pin('E', 15);  // D12
+    set_pin('D', 8);   // D13
+    set_pin('D', 9);   // D14
+    set_pin('D', 10);  // D15
+
+    set_pin('F', 0);   // A0
+    set_pin('F', 1);   // A1
+    set_pin('F', 2);   // A2
+    set_pin('F', 3);   // A3
+    set_pin('F', 4);   // A4
+    set_pin('F', 5);   // A5
+    set_pin('F', 12);  // A6
+    set_pin('F', 13);  // A7
+    set_pin('F', 14);  // A8
+    set_pin('F', 15);  // A9
+    set_pin('G', 0);   // A10
+    set_pin('G', 1);   // A11
+
+    set_pin('G', 4);   // BA0
+    set_pin('G', 5);   // BA1
+
+    set_pin('F', 11);  // SDNRAS
+    set_pin('G', 8);   // SDCLK
+    set_pin('G', 15);  // SDNCAS
+    set_pin('H', 5);   // SDNWE
+    set_pin('H', 6);   // SDNE1
+    set_pin('H', 7);   // SDCKE1
 }
 
 void send_sdram_command(uint8_t command, uint16_t auto_refresh_num, uint16_t mode_reg) {
@@ -91,7 +72,7 @@ void send_sdram_command(uint8_t command, uint16_t auto_refresh_num, uint16_t mod
         1 << 3                          | //bank 2
         ((mode_reg & 0x3FFF) << 9)        //mode register definition
     );
-    wait_micros(1);
+    wait(100000);
 }
 
 void init_sdram() {
@@ -106,7 +87,7 @@ void init_sdram() {
         0b0 << 9   | //no write protection
         0b10 << 7  | //CAS 2
         0b1  << 6  | //four internal banks
-        0b10 << 4  | //memory bus width 32bits
+        0b01 << 4  | //memory bus width 16bits
         0b01 << 2  | //12 row bits
         0b00 << 0    //8 column bits
     );
@@ -116,7 +97,7 @@ void init_sdram() {
         (1 << 20)   //TRP = 2 cycles
     );
     set_register(FMC_SDTR2, 0x0FFFFFFF,
-        1 << 24 | //TRCD = 2 cycles
+        5 << 24 | //TRCD = 6 cycles
         1 << 16 | //TWR = 2 cycles
         4 << 8  | //TRAS = 5 cycles
         6 << 4  | //TXSR = 7 cycles
@@ -124,33 +105,20 @@ void init_sdram() {
     );
 
     set_register(FMC_BCR1, 0, 1 << 31); //enable fmc
-    wait_micros(100);
+    wait(10000000);
 
     set_register(FMC_SDRTR, 0x7FFF, 1522 << 1);
 
-    send_sdram_command(0b001, 0, 0);
+    send_sdram_command(0b001, 1, 0); //CLK enable
+    wait(10000000);
 
-    //power up delay
-    //40000 clock cycles
-    //assume decrement, jump
-    //20000 cycles
-    for (volatile int i = 0; i < 80000; i++) {
-        __asm__("nop");
-    }
+    send_sdram_command(0b010, 1, 0); //PALL
 
-    set_register(FMC_SDCMR, 0x7FFFFF, 
-        0b010 | //precharge all command
-        1 << 3  //bank 2
-    );
-    send_sdram_command(0b010, 0, 0);
+    send_sdram_command(0b011, 8, 0); //auto-refresh
 
-    send_sdram_command(0b011, 2, 0);
+    uint32_t mode_reg = (1 << 0) | (2 << 4) | (1 << 9);
+    send_sdram_command(0b100, 8, mode_reg);
 
-    uint32_t mode_reg = 
-        (0b010 << 0) | //burst length = 4
-        (0b0   << 3) | //burst type = sequential
-        (0b010 << 4) | //CAS latency = 2
-        (0b00  << 7) | //operating mode = standard
-        (0b0   << 9);  //write burst mode = programmed burst length
-    send_sdram_command(0b100, 2, mode_reg);
+    //1562
+    set_register(FMC_SDRTR, 0x7FFF, 1562 << 1);
 }

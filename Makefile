@@ -25,7 +25,7 @@ flash: $(BIN)
 
 # Debug target also depends on BIN (ensures rebuild)
 debug: $(BIN)
-	st-flash write $(BIN) 0x08000000
+	# st-flash write $(BIN) 0x08000000
 	@bash -c '\
 		set -m; \
 		openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c "tcl_port 6667" > /dev/null 2>&1 & \
