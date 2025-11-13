@@ -57,29 +57,32 @@ void set_sdram_pins() {
     set_pin('G', 4);   // BA0
     set_pin('G', 5);   // BA1
 
-    set_pin('F', 11);  // SDNRAS
+
+    set_pin('E', 0);   // NBL0
+    set_pin('E', 1);   // NBL1
+    set_pin('H', 7);   // SDCKE1
     set_pin('G', 8);   // SDCLK
     set_pin('G', 15);  // SDNCAS
-    set_pin('H', 5);   // SDNWE
     set_pin('H', 6);   // SDNE1
-    set_pin('H', 7);   // SDCKE1
+    set_pin('F', 11);  // SDNRAS
+    set_pin('H', 5);   // SDNWE
 }
 
-void send_sdram_command(uint8_t command, uint16_t auto_refresh_num, uint16_t mode_reg) {
+void send_sdram_command(uint32_t command, uint32_t auto_refresh_num, uint32_t mode_reg) {
     set_register(FMC_SDCMR, 0x7FFFFF, 
-        (command & 0b111)               | //command
-        ((auto_refresh_num & 0xF) << 5) | //number of auto-refresh cycles
-        1 << 3                          | //bank 2
-        ((mode_reg & 0x3FFF) << 9)        //mode register definition
+        (command & 0b111)             | //command
+        ((auto_refresh_num - 1) << 5) | //number of auto-refresh cycles
+        (1 << 3)                      | //bank 2
+        ((mode_reg & 0x3FFF) << 9)      //mode register definition
     );
-    wait(100000);
 }
 
 void init_sdram() {
     set_sdram_pins();
 
-    set_register(FMC_SDCR1, 0b11111 << 10, 
-        0b01 << 13 | //RPIPE = 1 clk tick delay    
+
+    set_register(FMC_SDCR1, (3 << 13) | (1 << 12) | (3 << 10), 
+        0b01 << 13 | //RPIPE = 0 clk tick delay    
         0b1  << 12 | //RBURST = no burst mode
         0b10 << 10   //SDCLK = fmc_ker_ck / 2 (100MHz -> 10ns)
     );
@@ -104,8 +107,7 @@ void init_sdram() {
         1 << 0    //TMRD = 2 cycles
     );
 
-    set_register(FMC_BCR1, 0, 1 << 31); //enable fmc
-    wait(10000000);
+    set_register(FMC_BCR1, 1U << 31, 1U << 31); //enable fmc
 
     set_register(FMC_SDRTR, 0x7FFF, 1522 << 1);
 

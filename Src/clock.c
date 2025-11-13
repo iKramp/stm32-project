@@ -1,24 +1,8 @@
-/*
- * preconfigured:
- * HSI: 64MHz
- * HSE: 25MHz
- * LSE: 32.768
- * LSI: 32
- * CSI: 4MHz
- * HSI48: 48MHz
- *
- *
- */
-
 #include "clock.h"
 #include "gpio.h"
-#include "register.h"
 
-#define TARGET_SYS_CLK_MHZ 400 // MHZ
-// AXI-CLK = SYS_CLK / 2
-#define RCC_REG 0x58024400
+#define TARGET_SYS_CLK_MHZ 400
 
-//10 instructions
 void wait(volatile uint32_t count) {
   while (count--);
 }
@@ -27,7 +11,6 @@ void reg_read_delay(volatile uint32_t *reg) {
     volatile uint32_t tmp = *reg;
     (void)(tmp);
 }
-
 
 void prepare_flash() {
     uint8_t axi_clk = TARGET_SYS_CLK_MHZ / 2;
@@ -49,10 +32,6 @@ void prepare_flash() {
     while (*flash_acr != curr_val);
 }
 
-#define SYS_CLK_HSI 0b000
-#define SYS_CLK_CSI 0b001
-#define SYS_CLK_HSE 0b010
-#define SYS_CLK_PLL1 0b011
 void select_sys_clk(uint8_t clock) {
     volatile uint32_t *rcc_cfgr = (uint32_t *)(RCC_REG + 0x10);
     set_register(rcc_cfgr, 0b111, clock & 0b111);
@@ -61,6 +40,7 @@ void select_sys_clk(uint8_t clock) {
     while (((*rcc_cfgr >> 3) & 0b111) != (clock & 0b111));
 }
 
+
 void set_domain_config() {
     volatile uint32_t *RCC_D1CFGR = (uint32_t *)(RCC_REG + 0x18);
     volatile uint32_t *RCC_D2CFGR = (uint32_t *)(RCC_REG + 0x1C);
@@ -68,7 +48,7 @@ void set_domain_config() {
 
     set_register(RCC_D1CFGR, 0b111101111111,
         0b0000 << 8 | //D1CPRE = /1
-        0b1000 << 4 | //D1PPRE = /2
+        0b100 << 4 | //D1PPRE  = /2
         0b1000 << 0   //HPRE   = /2
     );
 
@@ -195,14 +175,14 @@ void set_dom_ker_clk() {
         0b000 << 0    // LPUART1SEL = rcc_pclk4
     );
 }
-
 void enable_clocks() {
     const uint32_t CLK_RDY_MASK = (1 << 17) | (1 << 13) | (1 << 8) | (1 << 2);
     volatile uint32_t *rcc_cr = (uint32_t *)(RCC_REG);
+    volatile uint32_t *rcc_csr = (uint32_t *)(RCC_REG + 0x74);
 
     //TODO: Enable LSI
 
-    set_register(rcc_cr, 0x3F0FF3BF, 
+    set_register(rcc_cr, 0x3F0FF3BF,
         1 << 18 | // HSEBYP
         1 << 16 | // HSEON
         1 << 12 | // HSI48ON
@@ -210,13 +190,16 @@ void enable_clocks() {
         1 << 0    // HSION
     );
 
+    set_register(rcc_csr, 1, 1);
+
+
     while ((*rcc_cr & CLK_RDY_MASK) != CLK_RDY_MASK);
+    while (!(*rcc_csr & 2));
 }
 
 void enable_syscfg_clk() {
     volatile uint32_t *RCC_APB4ENR = (uint32_t *)(RCC_REG + 0xF4);
     *RCC_APB4ENR |= 1 << 1; // SYSCFG
-    // *RCC_APB4ENR |= 1 << 2; // PWR
 }
 
 void change_voltage_scale(uint8_t scale) {
@@ -245,15 +228,17 @@ void enable_peripheral_clocks() {
     reg_read_delay(RCC_AHB4ENR);
 }
 
+
 void init_clock() {
     select_sys_clk(SYS_CLK_HSI); // switch to HSI first
     enable_clocks();
     enable_syscfg_clk();
-    change_voltage_scale(0b11); // scale 1 for 400MHz
+    change_voltage_scale(0b11);
     prepare_flash();
     set_domain_config();
     configure_pll();
     select_sys_clk(SYS_CLK_PLL1);
     set_dom_ker_clk();
+
     enable_peripheral_clocks();
 }

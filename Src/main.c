@@ -7,7 +7,6 @@ void stop() {
     while (1);
 }
 
-
 int main(void) {
     init_clock();
 
@@ -20,7 +19,7 @@ int main(void) {
     *addr = 0xBEEF;
     uint32_t res = *addr;
     if (res != 0xBEEF) {
-        while (1); // Error
+        stop();
     }
 
 
@@ -29,6 +28,6 @@ int main(void) {
 
     while (1) {
         write_pin('I', 13, read_pin('I', 13) ^ 1);
-        wait(100000000);
+        wait(10000000);
     }
 }
