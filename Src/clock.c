@@ -1,15 +1,19 @@
 #include "clock.h"
 #include "gpio.h"
+#include "register.h"
+#include <stdint.h>
+#include "nvic.h"
 
 #define TARGET_SYS_CLK_MHZ 400
 
+static uint64_t freq_hz = 64000000;
+volatile uint32_t *SYST_CSR = (uint32_t *)(SYSTICK_REG);
+volatile uint32_t *SYST_RVR = (uint32_t *)(SYSTICK_REG + 0x04);
+volatile uint32_t *SYST_CVR = (uint32_t *)(SYSTICK_REG + 0x08);
+volatile uint32_t *SYST_CALIB = (uint32_t *)(SYSTICK_REG + 0x0C);
+
 void wait(volatile uint32_t count) {
   while (count--);
-}
-
-void reg_read_delay(volatile uint32_t *reg) {
-    volatile uint32_t tmp = *reg;
-    (void)(tmp);
 }
 
 void prepare_flash() {
@@ -120,7 +124,7 @@ void configure_pll() {
     );
 
     set_register(RCC_PLL3DIVR, 0x7F7FFFFF, 
-        0b10 << 24 | // DIVR3 - divide by 3
+        19    << 24 | // DIVR3 - divide by 20
         0b10 << 16 | // DIVQ3 - divide by 3
         0b01 << 9 |  // DIVP3 - divide by 2
         15 << 0      // DIVN3 - multiply by 16
@@ -192,7 +196,6 @@ void enable_clocks() {
 
     set_register(rcc_csr, 1, 1);
 
-
     while ((*rcc_cr & CLK_RDY_MASK) != CLK_RDY_MASK);
     while (!(*rcc_csr & 2));
 }
@@ -228,6 +231,25 @@ void enable_peripheral_clocks() {
     reg_read_delay(RCC_AHB4ENR);
 }
 
+void enable_systick() {
+    *SYST_RVR = freq_hz / 1000 - 1; // 1ms tick
+    *SYST_CVR = 0; // clear current value
+    *SYST_CSR = 0b111; // enable systick with processor clock and interrupt
+}
+
+static volatile uint32_t timer_ticks = 0;
+void SysTick_Handler() {
+    timer_ticks++;
+}
+
+uint32_t get_systick_val() {
+    return *SYST_CVR;
+}
+
+void wait_ms(uint32_t ms) {
+    uint32_t target_ticks = timer_ticks + ms;
+    while (timer_ticks < target_ticks);
+}
 
 void init_clock() {
     select_sys_clk(SYS_CLK_HSI); // switch to HSI first
@@ -238,7 +260,9 @@ void init_clock() {
     set_domain_config();
     configure_pll();
     select_sys_clk(SYS_CLK_PLL1);
+    freq_hz = TARGET_SYS_CLK_MHZ * 1000000;
     set_dom_ker_clk();
+    enable_systick();
 
     enable_peripheral_clocks();
 }

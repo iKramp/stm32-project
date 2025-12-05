@@ -17,55 +17,55 @@ volatile uint32_t *MEM_ADDR  = (uint32_t *)(0xD0000000);  //SDRAM base address
 
 //memory clock 100MHz
 
-void set_pin(uint8_t gpio_class, uint8_t pin_num) {
+void set_sdram_pin(uint8_t gpio_class, uint8_t pin_num) {
     set_speed(gpio_class, pin_num, 0b11);
     set_in_pull(gpio_class, pin_num, 0); //no pull
     set_alternate(gpio_class, pin_num, 12);
 }
 
 void set_sdram_pins() {
-    set_pin('D', 14);  // D0
-    set_pin('D', 15);  // D1
-    set_pin('D', 0);   // D2
-    set_pin('D', 1);   // D3
-    set_pin('E', 7);   // D4
-    set_pin('E', 8);   // D5
-    set_pin('E', 9);   // D6
-    set_pin('E', 10);  // D7
-    set_pin('E', 11);  // D8
-    set_pin('E', 12);  // D9
-    set_pin('E', 13);  // D10
-    set_pin('E', 14);  // D11
-    set_pin('E', 15);  // D12
-    set_pin('D', 8);   // D13
-    set_pin('D', 9);   // D14
-    set_pin('D', 10);  // D15
+    set_sdram_pin('D', 14);  // D0
+    set_sdram_pin('D', 15);  // D1
+    set_sdram_pin('D', 0);   // D2
+    set_sdram_pin('D', 1);   // D3
+    set_sdram_pin('E', 7);   // D4
+    set_sdram_pin('E', 8);   // D5
+    set_sdram_pin('E', 9);   // D6
+    set_sdram_pin('E', 10);  // D7
+    set_sdram_pin('E', 11);  // D8
+    set_sdram_pin('E', 12);  // D9
+    set_sdram_pin('E', 13);  // D10
+    set_sdram_pin('E', 14);  // D11
+    set_sdram_pin('E', 15);  // D12
+    set_sdram_pin('D', 8);   // D13
+    set_sdram_pin('D', 9);   // D14
+    set_sdram_pin('D', 10);  // D15
 
-    set_pin('F', 0);   // A0
-    set_pin('F', 1);   // A1
-    set_pin('F', 2);   // A2
-    set_pin('F', 3);   // A3
-    set_pin('F', 4);   // A4
-    set_pin('F', 5);   // A5
-    set_pin('F', 12);  // A6
-    set_pin('F', 13);  // A7
-    set_pin('F', 14);  // A8
-    set_pin('F', 15);  // A9
-    set_pin('G', 0);   // A10
-    set_pin('G', 1);   // A11
+    set_sdram_pin('F', 0);   // A0
+    set_sdram_pin('F', 1);   // A1
+    set_sdram_pin('F', 2);   // A2
+    set_sdram_pin('F', 3);   // A3
+    set_sdram_pin('F', 4);   // A4
+    set_sdram_pin('F', 5);   // A5
+    set_sdram_pin('F', 12);  // A6
+    set_sdram_pin('F', 13);  // A7
+    set_sdram_pin('F', 14);  // A8
+    set_sdram_pin('F', 15);  // A9
+    set_sdram_pin('G', 0);   // A10
+    set_sdram_pin('G', 1);   // A11
 
-    set_pin('G', 4);   // BA0
-    set_pin('G', 5);   // BA1
+    set_sdram_pin('G', 4);   // BA0
+    set_sdram_pin('G', 5);   // BA1
 
 
-    set_pin('E', 0);   // NBL0
-    set_pin('E', 1);   // NBL1
-    set_pin('H', 7);   // SDCKE1
-    set_pin('G', 8);   // SDCLK
-    set_pin('G', 15);  // SDNCAS
-    set_pin('H', 6);   // SDNE1
-    set_pin('F', 11);  // SDNRAS
-    set_pin('H', 5);   // SDNWE
+    set_sdram_pin('E', 0);   // NBL0
+    set_sdram_pin('E', 1);   // NBL1
+    set_sdram_pin('H', 7);   // SDCKE1
+    set_sdram_pin('G', 8);   // SDCLK
+    set_sdram_pin('G', 15);  // SDNCAS
+    set_sdram_pin('H', 6);   // SDNE1
+    set_sdram_pin('F', 11);  // SDNRAS
+    set_sdram_pin('H', 5);   // SDNWE
 }
 
 void send_sdram_command(uint32_t command, uint32_t auto_refresh_num, uint32_t mode_reg) {
@@ -112,7 +112,7 @@ void init_sdram() {
     set_register(FMC_SDRTR, 0x7FFF, 1522 << 1);
 
     send_sdram_command(0b001, 1, 0); //CLK enable
-    wait(10000000);
+    wait_ms(1);
 
     send_sdram_command(0b010, 1, 0); //PALL
 

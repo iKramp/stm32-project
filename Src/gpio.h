@@ -8,9 +8,9 @@
 #define MODER_ALTERNATE 0b10
 #define MODER_ANALOG 0b11
 
-#define PULL_FLOAT 0
-#define PULL_UP 1
-#define PULL_DOWN 2
+#define PULL_FLOAT 0b00
+#define PULL_UP 0b01
+#define PULL_DOWN 0b10
 
 uint32_t get_class_reg(uint8_t gpio_class);
 void set_moder(uint8_t gpio_class, uint8_t pin_num, uint8_t mode);

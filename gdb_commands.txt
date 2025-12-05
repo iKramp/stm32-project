@@ -3,3 +3,6 @@ target remote localhost:3333
 monitor reset halt
 load
 layout src
+b main
+c
+
