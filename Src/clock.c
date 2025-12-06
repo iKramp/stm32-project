@@ -112,19 +112,19 @@ void configure_pll() {
     set_register(RCC_PLL1DIVR, 0x7F7FFFFF, 
         0b111 << 24  | //DIVR1 - divide by 8
         0b1111 << 16 | //DIVQ1 - divide by 16
-        0b001 << 9   | //DIVP1 - divide by 2
+        0b001 << 9   | //DIVP1 - divide by 2 - locked sysclk
         64 << 0        //DIVN1 - multiply by 64
     );
 
     set_register(RCC_PLL2DIVR, 0x7F7FFFFF,
-        0b01 << 24 | // DIVR2 - divide by 2
+        3    << 24 | // DIVR2 - divide by 4 - locked QSPI
         0b01 << 16 | // DIVQ2 - divide by 2
         0b100 << 9 | // DIVP2 - divide by 5
-        15 << 0      // DIVN2 - multiply by 16
+        47 << 0      // DIVN2 - multiply by 48
     );
 
     set_register(RCC_PLL3DIVR, 0x7F7FFFFF, 
-        19    << 24 | // DIVR3 - divide by 20
+        19    << 24 | // DIVR3 - divide by 20 - locked LTDC
         0b10 << 16 | // DIVQ3 - divide by 3
         0b01 << 9 |  // DIVP3 - divide by 2
         15 << 0      // DIVN3 - multiply by 16
@@ -143,7 +143,7 @@ void set_dom_ker_clk() {
     set_register(rcc_d1ccipr, 0x30010033, 
         0b00 << 28 |  // CKPERSEL = HSI
         0b0 << 17  |  // SDMMCSEL = PLL1Q
-        0b00 << 4  |  // QSPISEL = RCC_HCLK3
+        0b10 << 4  |  // QSPISEL = PLL2R
         0b00 << 0     // FMCSEL = RCC_HCLK3
     );
 
@@ -249,6 +249,10 @@ uint32_t get_systick_val() {
 void wait_ms(uint32_t ms) {
     uint32_t target_ticks = timer_ticks + ms;
     while (timer_ticks < target_ticks);
+}
+
+uint32_t get_time() {
+    return timer_ticks;
 }
 
 void init_clock() {

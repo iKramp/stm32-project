@@ -15,5 +15,6 @@
 void init_clock();
 void wait(volatile uint32_t count);
 void wait_ms(uint32_t ms);
+uint32_t get_time();
 
 #endif // CLOCK_H

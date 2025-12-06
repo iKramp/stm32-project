@@ -97,7 +97,6 @@ void set_ltdc_pins() {
     set_ltdc_pin('J', 15);// B3
 
     set_ltdc_pin('K', 0); //is in BSP
-    set_ltdc_pin('K', 1); //is in BSP
     set_ltdc_pin('K', 2); // G7
     set_ltdc_pin('K', 3); // B4
     set_ltdc_pin('K', 4); // B5
