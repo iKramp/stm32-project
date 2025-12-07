@@ -1,7 +1,4 @@
-#include <stdint.h>
-#include "clock.h"
-#include "gpio.h"
-#include "register.h"
+#include "fmc.h"
 
 //0x52004000 - 0x52004FFF FMC control registers
 #define FMC_BASE 0x52004000

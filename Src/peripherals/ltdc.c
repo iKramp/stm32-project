@@ -1,8 +1,4 @@
-#include <stdint.h>
 #include "ltdc.h"
-#include "clock.h"
-#include "gpio.h"
-#include "register.h"
 
 #define LTDC_BASE 0x50001000
 #define WIDTH 480

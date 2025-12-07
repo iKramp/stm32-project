@@ -1,8 +1,4 @@
 #include "clock.h"
-#include "gpio.h"
-#include "register.h"
-#include <stdint.h>
-#include "nvic.h"
 
 #define TARGET_SYS_CLK_MHZ 400
 

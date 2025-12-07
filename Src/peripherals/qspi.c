@@ -1,7 +1,4 @@
 #include "qspi.h"
-#include "clock.h"
-#include "gpio.h"
-#include "register.h"
 
 #define QSPI_BASE 0x52005000
 volatile uint32_t *QSPI_CR = (uint32_t *)(QSPI_BASE + 0x00);

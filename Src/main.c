@@ -1,12 +1,10 @@
-#include "gpio.h"
-#include "clock.h"
 #include <stdint.h>
 #include <string.h>
-#include "ltdc.h"
-#include "fmc.h"
-#include "framebuffer.h"
-#include "fb_text.h"
-#include "qspi.h"
+#include "peripherals/clock.h"
+#include "peripherals/ltdc.h"
+#include "peripherals/fmc.h"
+#include "rendering/framebuffer.h"
+#include "peripherals/qspi.h"
 
 #define BAD_APPLE_START_ADDR 0x90000000
 #define BAD_APPLE_HEIGHT 68
@@ -35,40 +33,13 @@ int main(void) {
     init_sdram();
     init_qspi();
 
-    wait_ms(1);
-
-    volatile uint32_t *addr = (uint32_t *)0xD0000000;
-    // //do a funny
-    *addr = 0xBEEF;
-    uint32_t res = *addr;
-    if (res != 0xBEEF) {
-        stop();
-    }
-
-    for (int i = 0; i < (480*272); i++) {
-        addr[i] = scramble(i);
-    }
-
+    clear_framebuffer(0xFF000000); // Black
     init_display();
 
-    draw_rectangle(10, 10, 100, 100, 0xFF00FF00); // Draw a green square
-
-    // PI13 = output (LED)
-    set_moder('I', 13, MODER_OUTPUT);
-    write_pin('I', 13, 0); // LED on
-    wait_ms(500);
-    write_pin('I', 13, 1); // LED off
-
     uint32_t frame = 0;
-
-    addr = (volatile uint32_t *)BAD_APPLE_START_ADDR;
-    res = *addr;
-
-    memset(get_fb()->buffer, 0, BAD_APPLE_WIDTH * BAD_APPLE_HEIGHT * 4);
-
     while (1) {
         uint32_t time = get_time();
-        uint8_t *bad_apple_frame = (uint8_t *)(BAD_APPLE_START_ADDR + (frame % BAD_APPLE_FRAMES) * BAD_APPLE_WIDTH * BAD_APPLE_HEIGHT * 4);
+        uint8_t *bad_apple_frame = (uint8_t *)((uint8_t *)BAD_APPLE_START_ADDR + (frame % BAD_APPLE_FRAMES) * BAD_APPLE_WIDTH * BAD_APPLE_HEIGHT * 4);
         for (int row = 0; row < BAD_APPLE_HEIGHT; row++) {
             uint8_t *src = bad_apple_frame + row * BAD_APPLE_WIDTH * 4;
             volatile uint8_t *dst = get_fb()->buffer + row * get_fb()->width * 4;

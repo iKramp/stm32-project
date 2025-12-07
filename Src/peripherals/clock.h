@@ -1,8 +1,8 @@
 #ifndef CLOCK_H
 #define CLOCK_H
 
-#include "register.h"
 #include <stdint.h>
+#include "../hal/register.h"
 
 #define SYS_CLK_HSI 0b000
 #define SYS_CLK_CSI 0b001
