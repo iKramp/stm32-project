@@ -18,5 +18,7 @@ struct Affine3 {
 
 struct Vec3 mul_mat3_vec3(struct Mat3 matrix, struct Vec3 vec);
 struct Vec3 mul_affine3_vec3(struct Affine3 matrix, struct Vec3 vec);
+struct Mat3 mat3_identity();
+struct Affine3 affine3_identity();
 
 #endif // MATRIX_H

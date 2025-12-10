@@ -3,6 +3,7 @@
 #include "peripherals/clock.h"
 #include "peripherals/ltdc.h"
 #include "peripherals/fmc.h"
+#include "ray_tracer/mod.h"
 #include "rendering/framebuffer.h"
 #include "peripherals/qspi.h"
 
@@ -35,6 +36,8 @@ int main(void) {
 
     clear_framebuffer(0xFF000000); // Black
     init_display();
+
+    tracer_main(get_fb()->buffer, get_fb()->width, get_fb()->height);
 
     uint32_t frame = 0;
     while (1) {

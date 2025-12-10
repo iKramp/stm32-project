@@ -28,11 +28,19 @@ float vec3_dot(struct Vec3 a, struct Vec3 b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-float vec3_length(struct Vec3 v) {
-    return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+struct Vec3 vec3_cross(struct Vec3 a, struct Vec3 b) {
+    struct Vec3 result;
+    result.x = a.y * b.z - b.y * a.z;
+    result.y = a.z * b.x - b.z * a.x;
+    result.z = a.x * b.y - b.x * a.y;
+    return result;
 }
 
-float vec3_length2(struct Vec3 v) {
+float vec3_length(struct Vec3 v) {
+    return sqrtf(vec3_length2(v));
+}
+
+inline float vec3_length2(struct Vec3 v) {
     return v.x * v.x + v.y * v.y + v.z * v.z;
 }
 

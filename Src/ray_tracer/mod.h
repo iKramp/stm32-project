@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
-void tracer_main();
+
+
+void tracer_main(volatile uint8_t *framebuffer, int width, int height);
 
 #endif // TRACER_MOD_H
