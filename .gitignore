@@ -1,3 +1,4 @@
-build.elf
 build.bin
 assets/
+build/
+.cache/

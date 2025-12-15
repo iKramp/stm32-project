@@ -17,6 +17,7 @@
 
           buildInputs = with pkgs; [
             gcc-arm-embedded
+            bear
 
             openocd
             stlink

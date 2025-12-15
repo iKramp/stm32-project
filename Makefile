@@ -14,7 +14,6 @@ CFLAGS = \
 	-fdata-sections \
 	-ffunction-sections \
 	-IInc \
-	-x c
 
 CXXFLAGS = \
 	$(CFLAGS) \
@@ -32,7 +31,6 @@ LDFLAGS = \
 	-Wl,--gc-sections \
 	-Wl,-Map=$(OUT)/build.map \
 	-lgcc \
-	-lc \
 	-lnosys
 
 # ------------------------------------------------------------------------------

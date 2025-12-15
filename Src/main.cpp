@@ -1,11 +1,15 @@
-#include <stdint.h>
-#include <string.h>
-#include "peripherals/clock.h"
-#include "peripherals/ltdc.h"
-#include "peripherals/fmc.h"
-#include "ray_tracer/mod.h"
-#include "rendering/framebuffer.h"
-#include "peripherals/qspi.h"
+extern "C" {
+    #include <stdint.h>
+    #include <string.h>
+    #include "peripherals/clock.h"
+    #include "peripherals/ltdc.h"
+    #include "peripherals/fmc.h"
+
+
+    #include "rendering/framebuffer.h"
+    #include "peripherals/qspi.h"
+}
+#include "ray_tracer/mod.hpp"
 
 #define BAD_APPLE_START_ADDR 0x90000000
 #define BAD_APPLE_HEIGHT 68

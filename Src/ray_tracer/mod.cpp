@@ -1,13 +1,14 @@
-#include "mod.h"
-#include "ray.h"
-#include "trace.h"
-#include "vec3.h"
-#include "camdata.h"
+#include "mod.hpp"
+#include "ray.hpp"
+#include "trace.hpp"
+#include "vec3.hpp"
+#include "camdata.hpp"
+#include "matrix.hpp"
 
-void tracer_main(volatile uint8_t *framebuffer, int width, int height) {
-    struct CamData cam_data = {
+void tracer_main(volatile uint8_t *framebuffer, uint32_t width, uint32_t height) {
+    CamData cam_data = {
         .depth = 5,
-        .transform = affine3_identity(),
+        .transform = Affine3::identity(),
         .canvas_width = width,
         .canvas_height = height,
         .fov = 90.0,
@@ -19,8 +20,8 @@ void tracer_main(volatile uint8_t *framebuffer, int width, int height) {
         for (int y = 0; y < height; y++) {
             int index = (y * width + x) * 4;
             uint32_t color = 0xFF000000;
-            struct Ray cam_ray = vec_dir_from_cam(&cam_data, x, y);
-            struct Vec3 ret_col = trace_ray(cam_ray);
+            Ray cam_ray = vec_dir_from_cam(cam_data, x, y);
+            Vec3 ret_col = trace_ray(cam_ray);
             color |= ((uint8_t)(ret_col.x * 255) & 0xFF) << 16;
             color |= ((uint8_t)(ret_col.y * 255) & 0xFF) << 8;
             color |= ((uint8_t)(ret_col.z * 255) & 0xFF);

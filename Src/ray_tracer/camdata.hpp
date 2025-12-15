@@ -2,11 +2,11 @@
 #define CAMDATA_H
 
 #include <stdint.h>
-#include "matrix.h"
-#include "vec3.h"
-#include "ray.h"
+#include "matrix.hpp"
+#include "ray.hpp"
 
-struct CamData {
+class CamData {
+public:
     uint32_t depth;
     struct Affine3 transform;
     uint32_t canvas_width;
@@ -16,6 +16,6 @@ struct CamData {
     uint32_t random_seed;
 };
 
-struct Ray vec_dir_from_cam(struct CamData *data, float x, float y);
+Ray vec_dir_from_cam(CamData &data, float x, float y);
 
 #endif // CAMDATA_H

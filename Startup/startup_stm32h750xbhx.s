@@ -117,6 +117,17 @@ Infinite_Loop:
   b Infinite_Loop
   .size Default_Handler, .-Default_Handler
 
+
+  .global _init
+  .type _init, %function
+_init:
+  bx lr            /* return immediately */
+
+  .global _fini
+  .type _fini, %function
+_fini:
+  bx lr            /* return immediately */
+
 /******************************************************************************
 *
 * The STM32H750XBHx vector table.  Note that the proper constructs
