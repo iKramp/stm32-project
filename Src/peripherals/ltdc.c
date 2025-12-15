@@ -42,10 +42,10 @@ volatile uint32_t *LTDC_L1CFBAR = (uint32_t *)(LTDC_BASE + 0xAC);
 volatile uint32_t *LTDC_L1CFBLR = (uint32_t *)(LTDC_BASE + 0xB0);
 volatile uint32_t *LTDC_L1CFBLNR= (uint32_t *)(LTDC_BASE + 0xB4);
 
-void set_ltdc_pin(uint8_t gpio_class, uint8_t pin_num) {
-    set_speed(gpio_class, pin_num, 0b11);
-    set_in_pull(gpio_class, pin_num, 0); //no pull
-    set_alternate(gpio_class, pin_num, 14);
+void set_ltdc_pin(uint8_t port, uint8_t pin_num) {
+    set_speed(port, pin_num, 0b11);
+    set_in_pull(port, pin_num, 0); //no pull
+    set_alternate(port, pin_num, 14);
 }
 
 void dma2d_init() {

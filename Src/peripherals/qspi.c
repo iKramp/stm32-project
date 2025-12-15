@@ -10,10 +10,10 @@ volatile uint32_t *QSPI_CCR = (uint32_t *)(QSPI_BASE + 0x14);
 //27 addr bits
 //75MHz - 13.33ns
 
-void set_qspi_pin(uint8_t class, uint8_t pin, uint8_t af) {
-    set_speed(class, pin, 0b11);
-    set_in_pull(class, pin, 0); //no pull
-    set_alternate(class, pin, af);
+void set_qspi_pin(uint8_t port, uint8_t pin, uint8_t af) {
+    set_speed(port, pin, 0b11);
+    set_in_pull(port, pin, 0); //no pull
+    set_alternate(port, pin, af);
 }
 
 void set_qspi_pins() {

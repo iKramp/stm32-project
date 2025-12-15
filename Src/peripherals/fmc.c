@@ -14,10 +14,10 @@ volatile uint32_t *MEM_ADDR  = (uint32_t *)(0xD0000000);  //SDRAM base address
 
 //memory clock 100MHz
 
-void set_sdram_pin(uint8_t gpio_class, uint8_t pin_num) {
-    set_speed(gpio_class, pin_num, 0b11);
-    set_in_pull(gpio_class, pin_num, 0); //no pull
-    set_alternate(gpio_class, pin_num, 12);
+void set_sdram_pin(uint8_t port, uint8_t pin_num) {
+    set_speed(port, pin_num, 0b11);
+    set_in_pull(port, pin_num, 0); //no pull
+    set_alternate(port, pin_num, 12);
 }
 
 void set_sdram_pins() {
