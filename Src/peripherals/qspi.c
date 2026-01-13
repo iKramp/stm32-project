@@ -46,7 +46,11 @@ void init_qspi(void) {
     // reset QSPI
     set_register(RCC_AHB3RSTR, 1 << 14, 1 << 14);
     set_register(RCC_AHB3RSTR, 1 << 14, 0 << 14);
+    wait_busy();
 
+    set_register(QSPI_CR, 0xFFDF1FDB,
+        (0 << 0)    //EN: disable QSPI
+    );
 
     wait_busy();
     set_register(QSPI_DCR, 0x1F0701,
@@ -60,7 +64,7 @@ void init_qspi(void) {
         (1 << 24) | //PRESCALER: divide by 2 (75MHz)
         (1 << 6)  | //DFM: enable dual flash mode
         (1 << 4)  | //SSHIFT: default setting idk
-        (1 << 0)    //EN: disable QSPI
+        (1 << 0)    //EN: enable QSPI
     );
     wait_busy();
 

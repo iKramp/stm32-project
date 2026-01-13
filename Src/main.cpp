@@ -8,6 +8,7 @@ extern "C" {
 
     #include "rendering/framebuffer.h"
     #include "peripherals/qspi.h"
+    #include "rendering/fb_text.h"
 }
 #include "ray_tracer/mod.hpp"
 
@@ -15,6 +16,13 @@ extern "C" {
 #define BAD_APPLE_HEIGHT 68
 #define BAD_APPLE_WIDTH 120
 #define BAD_APPLE_FRAMES 2192
+
+//16MB SDRAM
+//128MB QSPI
+//128kB program flash
+//1MB integrated ram
+//
+//whole framebuffer takes: 480 * 272 * 4 = 522kB
 
 void stop() {
     while (1);
@@ -40,6 +48,8 @@ int main(void) {
 
     clear_framebuffer(0xFF000000); // Black
     init_display();
+
+    uint8_t *qspi_mem = (uint8_t *)BAD_APPLE_START_ADDR;
 
     tracer_main(get_fb()->buffer, get_fb()->width, get_fb()->height);
 

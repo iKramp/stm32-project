@@ -30,6 +30,29 @@ static struct FrameBufferTextInfo fb_text_info = {
 
 void do_newline(void);
 
+void set_cursor_position(uint32_t line, uint32_t char_pos) {
+    if (line < fb_text_info.height_lines) {
+        fb_text_info.line = line;
+    }
+    if (char_pos < fb_text_info.width_chars) {
+        fb_text_info.char_pos = char_pos;
+    }
+}
+
+void display_bytes(const uint8_t *data, uint32_t length) {
+    for (uint32_t i = 0; i < length; i++) {
+        uint8_t byte = data[i];
+        uint8_t high_nibble = (byte >> 4) & 0x0F;
+        uint8_t low_nibble = byte & 0x0F;
+        write_character(high_nibble < 10 ? ('0' + high_nibble) : ('A' + high_nibble - 10));
+        write_character(low_nibble < 10 ? ('0' + low_nibble) : ('A' + low_nibble - 10));
+        write_character(' ');
+        if ((i + 1) % 16 == 0) {
+            do_newline();
+        }
+    }
+}
+
 void write_text(const char *text) {
     while (*text) {
         if (*text == '\n') {

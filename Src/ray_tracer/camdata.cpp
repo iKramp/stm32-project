@@ -15,7 +15,7 @@ Ray vec_dir_from_cam(CamData &data, float x, float y) {
     orientation_vec = data.transform * orientation_vec;
     Vec3 origin = {0, 0, 0};
     Ray ret_val = {
-        data.transform * origin,
+        data.transform.mul_point(origin),
         orientation_vec
     };
     return ret_val;
