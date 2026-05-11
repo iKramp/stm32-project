@@ -53,9 +53,9 @@ void Triangle::hit(Ray& ray, float min_t, float max_t, HitRecord& hit_record, in
     }
 
     uint8_t buffer[64];
-    snprintf((char *)buffer, 64, "testing %d   ", tri_index);
-    set_cursor_position(1, 0);
-    write_text((char *)buffer);
+    // snprintf((char *)buffer, 64, "testing %d   ", tri_index);
+    // set_cursor_position(1, 0);
+    // write_text((char *)buffer);
 
     hit_record.try_add_hit(t, obj_index, tri_index);
 }

@@ -5,6 +5,11 @@
 #include "../hal/gpio.h"
 #include "../hal/register.h"
 #include "clock.h"
+#include "../hal/common.h"
+
+#define SDRAM_ADDR 0xD0000000
+#define FB_ADDR                 SDRAM_ADDR //fb takes 480*272*4B of space
+
 
 void init_sdram();
 

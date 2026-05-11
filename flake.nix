@@ -30,7 +30,7 @@
           ];
 
           shellHook = ''
-            exec zsh -c 'nvim'
+            exec zsh
           '';
         };
       });

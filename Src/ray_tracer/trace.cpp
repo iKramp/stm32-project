@@ -63,8 +63,8 @@ Vec3 trace_ray(Ray ray) {
     if (hit_record.obj_index != -1) {
         set_cursor_position(0, 0);
         uint8_t int_buffer[64];
-        snprintf((char *)int_buffer, 64, "Hit tri %d", hit_record.sub_index);
-        write_text((char *)int_buffer);
+        int printed = snprintf((char *)int_buffer, 64, "Hit tri %d", hit_record.sub_index);
+        write_text((char *)int_buffer, printed);
 
 
 

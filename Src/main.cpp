@@ -1,21 +1,24 @@
+#include "server.hpp"
+#include <stdio.h>
 extern "C" {
     #include <stdint.h>
     #include <string.h>
     #include "peripherals/clock.h"
     #include "peripherals/ltdc.h"
     #include "peripherals/fmc.h"
+    #include "peripherals/eth/ethernet.h"
 
 
     #include "rendering/framebuffer.h"
     #include "peripherals/qspi.h"
     #include "rendering/fb_text.h"
+    #include "hal/common.h"
+    #include "settings.h"
 }
 #include "ray_tracer/mod.hpp"
+#include "net/packet_handler.hpp"
 
-#define BAD_APPLE_START_ADDR 0x90000000
-#define BAD_APPLE_HEIGHT 68
-#define BAD_APPLE_WIDTH 120
-#define BAD_APPLE_FRAMES 2192
+#define QSPI_ADDR 0x90000000
 
 //16MB SDRAM
 //128MB QSPI
@@ -49,21 +52,22 @@ int main(void) {
     clear_framebuffer(0xFF000000); // Black
     init_display();
 
-    uint8_t *qspi_mem = (uint8_t *)BAD_APPLE_START_ADDR;
+    draw_rectangle(300, 100, 100, 100, 0xFFFF0000); // Red square for testing
 
-    tracer_main(get_fb()->buffer, get_fb()->width, get_fb()->height);
+    // panic("Initializing Ethernet...");
 
-    uint32_t frame = 0;
+    init_packet_handlers(SERVER);
+    init_ethernet();
+
+    uint8_t *qspi_mem = (uint8_t *)QSPI_ADDR;
+
+    if (SERVER) {
+        server_main();
+    }
+
+    tracer_main(get_fb()->buffer, get_fb()->width, get_fb()->height, 0, 0, get_fb()->width, get_fb()->height);
+
     while (1) {
-        uint32_t time = get_time();
-        uint8_t *bad_apple_frame = (uint8_t *)((uint8_t *)BAD_APPLE_START_ADDR + (frame % BAD_APPLE_FRAMES) * BAD_APPLE_WIDTH * BAD_APPLE_HEIGHT * 4);
-        for (int row = 0; row < BAD_APPLE_HEIGHT; row++) {
-            uint8_t *src = bad_apple_frame + row * BAD_APPLE_WIDTH * 4;
-            volatile uint8_t *dst = get_fb()->buffer + row * get_fb()->width * 4;
-            memcpy((void *)dst, (void *)src, BAD_APPLE_WIDTH * 4);
-        }
-        frame++;
-        time = get_time() - time;
-        wait_ms(33 - time);
+        //inf loop
     }
 }

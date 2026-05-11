@@ -1,6 +1,7 @@
 #include "clock.h"
 
 #define TARGET_SYS_CLK_MHZ 400
+//HCLK3 is 200MHz
 
 static uint64_t freq_hz = 64000000;
 volatile uint32_t *SYST_CSR = (uint32_t *)(SYSTICK_REG);

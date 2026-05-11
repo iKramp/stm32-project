@@ -1,7 +1,8 @@
 #include "framebuffer.h"
+#include "../peripherals/fmc.h"
 
 static struct FrameBuffer fb = {
-    .buffer = (volatile uint8_t *)0xD0000000, // Example framebuffer address in SDRAM
+    .buffer = (volatile uint8_t *)FB_ADDR,
     .width = 480,
     .height = 272,
     .bpp = 4, // bytes per pixel (assuming ARGB8888)

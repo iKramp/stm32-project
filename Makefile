@@ -8,7 +8,7 @@ OUT = build
 CFLAGS = \
 	-mcpu=cortex-m7 \
 	-mthumb \
-	-Og \
+	-O0 \
 	-g3 \
 	-ffreestanding \
 	-fdata-sections \

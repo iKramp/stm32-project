@@ -1,6 +1,8 @@
 #include "fb_text.h"
 #include "framebuffer.h"
 #include "font.h"
+#include <stdio.h>
+#include <string.h>
 
 struct FrameBufferTextInfo {
     uint8_t foreground_r;
@@ -23,10 +25,27 @@ static struct FrameBufferTextInfo fb_text_info = {
     .background_g = 0,
     .background_b = 0,
     .height_lines = 34, // Example: 272 pixels / 8 pixels per character
-    .width_chars = 60,  // Example: 480 pixels / 8 pixels per character
+    .width_chars = 30,  // Example: 480 pixels / 8 pixels per character
     .line = 30,
     .char_pos = 0
 };
+
+int _write(int file, const char *ptr, int len) {
+    write_text(ptr, len);
+    return len;
+}
+
+void set_foreground_color(uint8_t r, uint8_t g, uint8_t b) {
+    fb_text_info.foreground_r = r;
+    fb_text_info.foreground_g = g;
+    fb_text_info.foreground_b = b;
+}
+
+void set_background_color(uint8_t r, uint8_t g, uint8_t b) {
+    fb_text_info.background_r = r;
+    fb_text_info.background_g = g;
+    fb_text_info.background_b = b;
+}
 
 void do_newline(void);
 
@@ -53,8 +72,8 @@ void display_bytes(const uint8_t *data, uint32_t length) {
     }
 }
 
-void write_text(const char *text) {
-    while (*text) {
+void write_text(const char *text, uint32_t len) {
+    while (*text && len--) {
         if (*text == '\n') {
             do_newline();
         } else {
@@ -102,14 +121,39 @@ void do_newline() {
 void scroll() {
     struct FrameBuffer* fb_info = get_fb();
     volatile uint8_t *fb = fb_info->buffer;
-    uint32_t diff = fb_info->width * fb_info->bpp * CHAR_HEIGHT;
-    volatile uint8_t *limit = fb + (diff * (fb_text_info.height_lines - 1) - 1);
 
-    for (volatile uint8_t *ptr = fb; ptr <= limit; ptr += 4)
-        *(volatile uint32_t*)ptr = *(volatile uint32_t*)(ptr + diff);
+    uint32_t bytes_per_pixel = fb_info->bpp;
+    uint32_t pitch = fb_info->width * bytes_per_pixel;
 
-    // Clear the last line
-    uint32_t start_of_last_line = diff * (fb_text_info.height_lines - 1);
-    draw_rectangle(0, fb_info->height - CHAR_HEIGHT, fb_info->width, CHAR_HEIGHT, 0xFF000000);
+    // Width of the text region in pixels
+    uint32_t text_width_pixels =
+        fb_text_info.width_chars * CHAR_WIDTH;
 
+    // Bytes to copy per scanline within text region
+    uint32_t text_row_bytes =
+        text_width_pixels * bytes_per_pixel;
+
+    // Scroll height in pixels
+    uint32_t scroll_height =
+        (fb_text_info.height_lines - 1) * CHAR_HEIGHT;
+
+    // Move text area upward
+    for (uint32_t y = 0; y < scroll_height; y++) {
+        volatile uint8_t *dst =
+            fb + (y * pitch);
+
+        volatile uint8_t *src =
+            fb + ((y + CHAR_HEIGHT) * pitch);
+
+        memcpy((void*)dst, (void*)src, text_row_bytes);
+    }
+
+    // Clear only the last text line
+    draw_rectangle(
+        0,
+        scroll_height,
+        text_width_pixels,
+        CHAR_HEIGHT,
+        0xFF000000
+    );
 }

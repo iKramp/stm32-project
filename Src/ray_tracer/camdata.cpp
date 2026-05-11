@@ -20,3 +20,19 @@ Ray vec_dir_from_cam(CamData &data, float x, float y) {
     };
     return ret_val;
 }
+
+CamData get_cam_data() {
+    CamData data;
+    data.depth = 5;
+    data.transform = Affine3::identity().translate(Vec3(0, 0, -10));
+    data.canvas_width = 0;
+    data.canvas_height = 0;
+    data.top_left_x = 0;
+    data.top_left_y = 0;
+    data.region_width = 0;
+    data.region_height = 0;
+    data.fov = 90.0f;
+    data.frame = 0;
+    data.random_seed = 42;
+    return data;
+}

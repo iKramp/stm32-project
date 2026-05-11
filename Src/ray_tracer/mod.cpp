@@ -16,7 +16,7 @@ extern "C" {
     #include "../rendering/framebuffer.h"
 }
 
-#define SCALING_FACTOR 2
+#define SCALING_FACTOR 20
 
 #define QSPI_ADDR 0x90000000
 
@@ -46,12 +46,31 @@ void draw_scaled_pixel(uint32_t x, uint32_t y, uint32_t color) {
     }
 }
 
-void tracer_main(volatile uint8_t *framebuffer, uint32_t width, uint32_t height) {
+uint8_t *get_scene_data() {
+    return (uint8_t *)QSPI_ADDR;
+}
+
+uint32_t get_scene_data_size() {
+    uint8_t *data_ptr = (uint8_t *)QSPI_ADDR;
+    uint32_t total_size = 0;
+    for (int i = 0; i < 7; i++) {
+        uint32_t buffer_size = *((uint32_t *)data_ptr);
+        total_size += 4 + buffer_size; //size field + buffer data
+        data_ptr += 4 + buffer_size;
+    }
+    return total_size;
+}
+
+void tracer_main(volatile uint8_t *framebuffer, uint32_t width, uint32_t height, uint32_t from_x, uint32_t from_y, uint32_t region_width, uint32_t region_height) {
     CamData cam_data = {
         .depth = 5,
         .transform = Affine3::identity().translate(Vec3(0, 0, -10)),
         .canvas_width = width,
         .canvas_height = height,
+        .top_left_x = from_x,
+        .top_left_y = from_y,
+        .region_width = region_width,
+        .region_height = region_height,
         .fov = 90.0,
         .frame = 0,
         .random_seed = 42
@@ -115,16 +134,6 @@ void tracer_main(volatile uint8_t *framebuffer, uint32_t width, uint32_t height)
             color |= ((uint8_t)(ret_col.y * 255) & 0xFF) << 8;
             color |= ((uint8_t)(ret_col.z * 255) & 0xFF);
             draw_scaled_pixel(x / SCALING_FACTOR, y / SCALING_FACTOR, color);
-            // for (int dx = 0; dx < SCALING_FACTOR; dx++) {
-            //     for (int dy = 0; dy < SCALING_FACTOR; dy++) {
-            //         int draw_x = x + dx;
-            //         int draw_y = y + dy;
-            //         if (draw_x < width && draw_y < height) {
-            //             int index = (draw_y * width + draw_x) * 4;
-            //             *((volatile uint32_t *)(framebuffer + index)) = color;
-            //         }
-            //     }
-            // }
         }
     }
 }
