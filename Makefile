@@ -1,11 +1,22 @@
-CC      = arm-none-eabi-gcc
-CXX     = arm-none-eabi-g++
-AS      = arm-none-eabi-gcc
-OBJCOPY = arm-none-eabi-objcopy
+STMCC       = arm-none-eabi-gcc
+STMCXX      = arm-none-eabi-g++
+STMAS       = arm-none-eabi-gcc
+STMOBJCOPY  = arm-none-eabi-objcopy
 
-OUT = build
+HOSTCC      = gcc
+HOSTCXX     = g++
+HOSTAS      = as
+HOSTOBJCOPY = objcopy
 
-CFLAGS = \
+# ==============================================================================
+# FLAGS
+# ==============================================================================
+
+COMMON_INC = \
+	-Iinclude \
+	-Icore
+
+STMCFLAGS = \
 	-mcpu=cortex-m7 \
 	-mthumb \
 	-O0 \
@@ -13,73 +24,169 @@ CFLAGS = \
 	-ffreestanding \
 	-fdata-sections \
 	-ffunction-sections \
-	-IInc \
+	$(COMMON_INC)
 
-CXXFLAGS = \
-	$(CFLAGS) \
+STMCXXFLAGS = \
+	$(STMCFLAGS) \
 	-std=gnu++17 \
 	-fno-exceptions \
 	-fno-rtti \
 	-fno-use-cxa-atexit \
 	-fno-threadsafe-statics
 
-LDFLAGS = \
+STMLDFLAGS = \
 	-mcpu=cortex-m7 \
 	-mthumb \
 	-TSTM32H750XBHX_FLASH.ld \
 	-nostdlib \
 	-Wl,--gc-sections \
-	-Wl,-Map=$(OUT)/build.map \
+	-Wl,-Map=$(STMOUT)/build.map \
 	-lgcc \
 	-lnosys
 
-# ------------------------------------------------------------------------------
+HOSTCFLAGS = \
+	-O2 \
+	-g \
+	$(COMMON_INC)
 
-C_SRCS   := $(shell find Src -name '*.c')
-CPP_SRCS := $(shell find Src -name '*.cpp')
+HOSTCXXFLAGS = \
+	$(HOSTCFLAGS) \
+	-std=gnu++17
+
+HOSTLDFLAGS =
+
+STMOUT_SERVER = stm_build_server
+STMOUT_CLIENT = stm_build_client
+HOSTOUT_SERVER = host_build_server
+HOSTOUT_CLIENT = host_build_client
+
+ifeq ($(SERVER),1)
+    STMCFLAGS += -DSERVER_BUILD
+	HOSTCFLAGS += -DSERVER_BUILD
+
+	STMOUT      = $(STMOUT_SERVER)
+	HOSTOUT     = $(HOSTOUT_SERVER)
+else
+	STMOUT      = $(STMOUT_CLIENT)
+	HOSTOUT     = $(HOSTOUT_CLIENT)
+endif
+
+# ==============================================================================
+# SOURCES
+# ==============================================================================
+
 ASM_SRCS := Startup/startup_stm32h750xbhx.s
 
-C_OBJS   := $(patsubst %.c,$(OUT)/%.o,$(C_SRCS))
-CPP_OBJS := $(patsubst %.cpp,$(OUT)/%.o,$(CPP_SRCS))
-ASM_OBJS := $(patsubst %.s,$(OUT)/%.o,$(ASM_SRCS))
+CORE_C_SRCS   := $(shell find core -name '*.c')
+CORE_CPP_SRCS := $(shell find core -name '*.cpp')
 
-OBJS := $(C_OBJS) $(CPP_OBJS) $(ASM_OBJS)
+STM_C_SRCS    := $(shell find platform/stm32 -name '*.c')
+STM_CPP_SRCS  := $(shell find platform/stm32 -name '*.cpp')
 
-ELF = $(OUT)/build.elf
-BIN = $(OUT)/build.bin
+HOST_C_SRCS   := $(shell find platform/linux -name '*.c')
+HOST_CPP_SRCS := $(shell find platform/linux -name '*.cpp')
 
-# ------------------------------------------------------------------------------
+# ==============================================================================
+# OBJECTS
+# ==============================================================================
 
-all: $(BIN)
+STM_ASM_OBJS := $(patsubst %.s,$(STMOUT)/%.o,$(ASM_SRCS))
 
-# Create output directories automatically
-$(OUT)/%.o: %.c
+STM_CORE_C_OBJS   := $(patsubst %.c,$(STMOUT)/%.o,$(CORE_C_SRCS))
+STM_CORE_CPP_OBJS := $(patsubst %.cpp,$(STMOUT)/%.o,$(CORE_CPP_SRCS))
+
+HOST_CORE_C_OBJS   := $(patsubst %.c,$(HOSTOUT)/%.o,$(CORE_C_SRCS))
+HOST_CORE_CPP_OBJS := $(patsubst %.cpp,$(HOSTOUT)/%.o,$(CORE_CPP_SRCS))
+
+STM_C_OBJS    := $(patsubst %.c,$(STMOUT)/%.o,$(STM_C_SRCS))
+STM_CPP_OBJS  := $(patsubst %.cpp,$(STMOUT)/%.o,$(STM_CPP_SRCS))
+
+HOST_C_OBJS   := $(patsubst %.c,$(HOSTOUT)/%.o,$(HOST_C_SRCS))
+HOST_CPP_OBJS := $(patsubst %.cpp,$(HOSTOUT)/%.o,$(HOST_CPP_SRCS))
+
+STM_OBJS = \
+	$(STM_ASM_OBJS) \
+	$(STM_CORE_C_OBJS) \
+	$(STM_CORE_CPP_OBJS) \
+	$(STM_C_OBJS) \
+	$(STM_CPP_OBJS)
+
+HOST_OBJS = \
+	$(HOST_CORE_C_OBJS) \
+	$(HOST_CORE_CPP_OBJS) \
+	$(HOST_C_OBJS) \
+	$(HOST_CPP_OBJS)
+
+# ==============================================================================
+# OUTPUTS
+# ==============================================================================
+
+STMELF = $(STMOUT)/build.elf
+STMBIN = $(STMOUT)/build.bin
+
+HOSTELF = $(HOSTOUT)/host.elf
+
+# ==============================================================================
+# DEFAULT TARGET
+# ==============================================================================
+
+all: $(STMBIN) $(HOSTELF)
+
+# ==============================================================================
+# STM32 BUILD RULES
+# ==============================================================================
+
+$(STMOUT)/%.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(STMCC) $(STMCFLAGS) -c $< -o $@
 
-$(OUT)/%.o: %.cpp
+$(STMOUT)/%.o: %.cpp
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(STMCXX) $(STMCXXFLAGS) -c $< -o $@
 
-$(OUT)/%.o: %.s
+$(STMOUT)/%.o: %.s
 	@mkdir -p $(dir $@)
-	$(AS) $(CFLAGS) -c $< -o $@
+	$(STMAS) $(STMCFLAGS) -c $< -o $@
 
-# Link
-$(ELF): $(OBJS)
-	@mkdir -p $(OUT)
-	$(CXX) $(OBJS) -o $@ $(LDFLAGS)
+# ==============================================================================
+# HOST BUILD RULES
+# ==============================================================================
 
-# Binary
-$(BIN): $(ELF)
-	$(OBJCOPY) -O binary $< $@
+$(HOSTOUT)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(HOSTCC) $(HOSTCFLAGS) -c $< -o $@
 
-# ------------------------------------------------------------------------------
+$(HOSTOUT)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(HOSTCXX) $(HOSTCXXFLAGS) -c $< -o $@
 
-flash: $(BIN)
-	st-flash write $(BIN) 0x08000000
+# ==============================================================================
+# LINKING
+# ==============================================================================
 
-debug: $(BIN)
+$(STMELF): $(STM_OBJS)
+	@mkdir -p $(STMOUT)
+	$(STMCXX) $(STM_OBJS) -o $@ $(STMLDFLAGS)
+
+$(HOSTELF): $(HOST_OBJS)
+	@mkdir -p $(HOSTOUT)
+	$(HOSTCXX) $(HOST_OBJS) -o $@ $(HOSTLDFLAGS)
+
+# ==============================================================================
+# BIN
+# ==============================================================================
+
+$(STMBIN): $(STMELF)
+	$(STMOBJCOPY) -O binary $< $@
+
+# ==============================================================================
+# UTILITIES
+# ==============================================================================
+
+flash: $(STMBIN)
+	st-flash write $(STMBIN) 0x08000000
+
+debug: $(STMBIN)
 	@bash -c '\
 		set -m; \
 		openocd -f interface/stlink.cfg -f target/stm32h7x.cfg -c "tcl_port 6667" > /dev/null 2>&1 & \
@@ -93,6 +200,13 @@ debug: $(BIN)
 rescue:
 	st-flash --connect-under-reset --freq=1000 erase
 
-clean:
-	rm -rf $(OUT)
+host: $(HOSTELF)
+	./$(HOSTELF)
 
+clean:
+	rm -rf $(STMOUT_SERVER)
+	rm -rf $(STMOUT_CLIENT)
+	rm -rf $(HOSTOUT_SERVER)
+	rm -rf $(HOSTOUT_CLIENT)
+
+.PHONY: all clean flash debug rescue host

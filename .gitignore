@@ -1,5 +1,5 @@
 build.bin
 assets/
-build/
+*build*/
 .cache/
 result
