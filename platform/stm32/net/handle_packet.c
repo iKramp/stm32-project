@@ -26,8 +26,6 @@ void reply_arp(uint8_t *packet) {
         return;
     }
 
-    printf("got arp, replying\n");
-
     // Build ARP reply
     uint8_t reply[42];
     memcpy(reply, sender_mac, 6); // Destination MAC = sender MAC

@@ -8,5 +8,6 @@
 void panic(const char *message);
 uint32_t get_uid();
 void print_cache_info();
+void enable_caches();
 
 #endif // COMMON_H

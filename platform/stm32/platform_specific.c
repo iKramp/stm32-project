@@ -1,11 +1,13 @@
 #include "../../include/platform_specific.h"
 #include "../../core/scene_data.h"
+#include "hal/mpu.h"
 #include "peripherals/clock.h"
 #include "peripherals/fmc.h"
 #include "peripherals/qspi.h"
 #include "rendering/framebuffer.h"
 #include "peripherals/ltdc.h"
 #include "peripherals/eth/ethernet.h"
+#include "hal/common.h"
 
 #define QSPI_ADDR 0x90000000
 
@@ -21,6 +23,7 @@ uint32_t _get_scene_data_size() {
 }
 
 void platform_init(uint8_t server) {
+
     init_clock();
 
     init_sdram();
@@ -29,6 +32,9 @@ void platform_init(uint8_t server) {
     clear_framebuffer(0xFF000000);
     init_display();
 
+    // init_mpu();
+    // enable_caches();
+    //
     init_ethernet();
 
     set_scene_data((uint8_t *)QSPI_ADDR, _get_scene_data_size());

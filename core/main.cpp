@@ -50,12 +50,16 @@ int main(void) {
     //
     // parse_scene_data(scene_data);
     // CamData cam_data = get_cam_data();
+    // uint32_t frame = 0;
     //
-    // for(int x = 0; x < 480; x++) {
-    //     for(int y = 0; y < 272; y++) {
-    //         uint32_t color = tracer_main(cam_data, x, y);
-    //         draw_pixel(x, y, color | 0xFF000000);
+    // while (1) {
+    //     for(int x = 0; x < 480; x++) {
+    //         for(int y = 0; y < 272; y++) {
+    //             uint32_t color = scramble(x * 272 + y + frame);
+    //             draw_pixel(x, y, color | 0xFF000000);
+    //         }
     //     }
+    //     frame++;
     // }
 
     if (SERVER) {

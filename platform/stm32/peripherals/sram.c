@@ -23,3 +23,7 @@ uintptr_t eth_rx_queue_addr() {
 uintptr_t eth_tx_queue_addr() {
     return eth_rx_queue_addr() + 128 * 16; //128 descriptors of size 16B
 }
+
+uintptr_t get_sram_end() {
+    return eth_tx_queue_addr() + 128 * 16;
+}

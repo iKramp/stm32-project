@@ -52,3 +52,13 @@ void print_cache_info() {
         printf("  - Data Cache (D-Cache): DISABLED\n");
     }
 }
+
+void enable_caches() {
+    volatile uint32_t *SCB_ICIALLU = (uint32_t *)(0xE000EF50);
+    *SCB_ICIALLU = 0; // Invalidate entire I-Cache
+
+    volatile uint32_t *SCB_CCR = (uint32_t *)(0xE000ED14);
+    uint32_t ccr_val = *SCB_CCR;
+    ccr_val |= (1 << 17); // Enable I-Cache
+    *SCB_CCR = ccr_val;
+}
