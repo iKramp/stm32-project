@@ -4,6 +4,7 @@
 #include "scene_data.hpp"
 #include "triangle.hpp"
 #include "vec3.hpp"
+#include <cstdio>
 
 NormalUv get_normal_uv(
         Vec3 hit, 
@@ -53,6 +54,7 @@ Vec3 trace_ray(Ray ray) {
     for (int i = 0; i < scene_data.instance_count; i++) {
         scene_data.instance_buffer[i].hit(ray, 0.0, 10000000, hit_record, i);
     }
+
 
     if (hit_record.obj_index != -1) {
         Triangle tri = scene_data.triangle_buffer[hit_record.sub_index];
@@ -108,6 +110,7 @@ Vec3 trace_ray(Ray ray) {
         Vec3 normal = normal_uv.normal;
         return (normal + Vec3(1.0, 1.0, 1.0)) * 0.5;
     }
+
 
     //background stop color
     float factor = ray.direction.y + 0.5;

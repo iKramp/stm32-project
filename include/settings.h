@@ -10,7 +10,7 @@
 
 #define IP {192, 168, 1, 100} //used by stm for checking if same ip for incoming packet
 #define SERVER_IP "192.168.1.100" //used by linux client
-#define SERVER_IP_BYTES {192, 168, 1, 50} //used by both clients
+#define SERVER_IP_BYTES {192, 168, 1, 100} //used by both clients
 #define PORT 12345
 #define SUBNET_MASK {255, 255, 255, 0}
 

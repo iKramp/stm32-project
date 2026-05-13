@@ -96,5 +96,8 @@ uint8_t *get_data_buffer() {
         perror("malloc");
         exit(EXIT_FAILURE);
     }
+
+    uint8_t *end_of_buffer = buffer + 128 * 1024 * 1024;
+    printf("Data buffer allocated at address: %p, end of buffer: %p\n", buffer, end_of_buffer);
     return buffer;
 }

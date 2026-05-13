@@ -11,6 +11,7 @@
 #include "camdata.hpp"
 #include "matrix.hpp"
 #include "vertex.hpp"
+#include <cstdio>
 
 extern "C" {
     #include "../../include/draw.h"
@@ -31,6 +32,7 @@ extern "C" {
 
 void parse_scene_data(uint8_t *raw_data) {
     uint8_t *data_ptr = raw_data;
+    printf("Parsing scene data at address: %p\n", raw_data);
 
     uint32_t vertex_buffer_size = *((uint32_t *)data_ptr);
     data_ptr += 4;
@@ -85,6 +87,12 @@ uint32_t tracer_main(
     uint32_t x,
     uint32_t y
 ) {
+    if (x % 2 == y % 2) {
+        return 0xFF000000; //black for testing
+    } else {
+        return 0xFFFFFFFF; //white for testing
+    }
+
     uint32_t color = 0xFF000000;
     Ray cam_ray = vec_dir_from_cam(cam_data_ptr, x, y);
     Vec3 ret_col = trace_ray(cam_ray);

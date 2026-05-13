@@ -27,6 +27,10 @@ struct RenderState {
     uint32_t y;
 };
 
+struct SendingRenderState {
+    uint32_t offset;
+};
+
 struct State {
     enum StateEnum state;
     uint32_t last_packet_timestamp;
@@ -36,6 +40,7 @@ struct State {
         struct DataReceptionState data_reception_state;
         struct CamDataReceptionState camdata_reception_state;
         struct RenderState render_state;
+        struct SendingRenderState sending_render_state;
     } data;
 };
 

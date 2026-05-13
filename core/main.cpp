@@ -1,10 +1,14 @@
+#include "ray_tracer/camdata.hpp"
 #include "server.hpp"
 #include "client.hpp"
+#include "ray_tracer/scene_data.hpp"
+#include "ray_tracer/mod.hpp"
 extern "C" {
     #include <stdint.h>
     #include "../include/settings.h"
     #include "../include/platform_specific.h"
     #include "../include/draw.h"
+    #include "scene_data.h"
 }
 #include "net/packet_handler.hpp"
 
@@ -41,6 +45,18 @@ int main(void) {
     // panic("Initializing Ethernet...");
 
     init_packet_handlers(SERVER);
+
+    // uint8_t *scene_data = get_scene_data();
+    //
+    // parse_scene_data(scene_data);
+    // CamData cam_data = get_cam_data();
+    //
+    // for(int x = 0; x < 480; x++) {
+    //     for(int y = 0; y < 272; y++) {
+    //         uint32_t color = tracer_main(cam_data, x, y);
+    //         draw_pixel(x, y, color | 0xFF000000);
+    //     }
+    // }
 
     if (SERVER) {
         server_main();

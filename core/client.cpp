@@ -4,6 +4,7 @@
 #include "ray_tracer/mod.hpp"
 #include <string.h>
 extern "C" {
+    #include "scene_data.h"
     #include "../include/clock.h"
     #include "../include/draw.h"
     #include "../include/panic.h"
@@ -15,6 +16,7 @@ extern "C" {
 #include <stdio.h>
 
 static State state = { .state = NOT_CONNECTED };
+static uint8_t *pixel_buffer = 0;
 
 uint8_t calculate_hash_client(uint8_t *data, uint32_t length) {
     //simple xor hash for testing
@@ -50,6 +52,8 @@ void handle_data_response(struct Message *msg, uint8_t *src_ip, uint16_t src_por
         state.state = GETTING_CAMDATA;
         state.data.camdata_reception_state.last_requested_timestamp = 0;
         parse_scene_data(state.data_buffer);
+        set_scene_data(state.data_buffer, state.data.data_reception_state.total_length);
+        pixel_buffer = state.data_buffer + state.data.data_reception_state.total_length;
     }
 }
 
@@ -63,6 +67,20 @@ void handle_camdata_response(struct Message *msg, uint8_t *src_ip, uint16_t src_
     state.state = RENDERING;
     state.data.render_state.x = 0;
     state.data.render_state.y = 0;
+}
+
+void handle_data_finished_response(struct Message *msg, uint8_t *src_ip, uint16_t src_port) {
+    if (msg->payload.data_finished_response.success) {
+        printf("Server successfully received rendered data for region (%u, %u)\n", state.cam_data.top_left_x, state.cam_data.top_left_y);
+        state.state = GETTING_CAMDATA;
+        state.data.camdata_reception_state.last_requested_timestamp = 0;
+        state.last_packet_timestamp = get_time(); //prevent timeout
+    } else {
+        printf("Server reported error receiving rendered data for region (%u, %u), expected offset: %u\n", state.cam_data.top_left_x, state.cam_data.top_left_y, msg->payload.data_finished_response.expected_offset);
+        //resend from expected offset
+        state.state = SENDING_RENDER;
+        state.data.sending_render_state.offset = msg->payload.data_finished_response.expected_offset;
+    }
 }
 
 void request_data(DataReceptionState *state) {
@@ -79,8 +97,10 @@ void request_data(DataReceptionState *state) {
 }
 
 void client_main() {
+    state.data_buffer = get_data_buffer();
     register_message_handler(DATA_RESPONSE, handle_data_response);
     register_message_handler(CAMDATA_RESPONSE, handle_camdata_response);
+    register_message_handler(DATA_FINISHED_RESPONSE, handle_data_finished_response);
 
     printf("Client started\n");
 
@@ -99,7 +119,6 @@ void client_main() {
                 state.state = GETTING_SCENE;
                 state.data.data_reception_state.total_length = 0;
                 state.data.data_reception_state.received_length = 0;
-                state.data_buffer = get_data_buffer();
                 state.last_packet_timestamp = 0;
                 state.data.data_reception_state.last_requested_timestamp = 0;
 
@@ -145,7 +164,11 @@ void client_main() {
             case RENDERING: {
                 uint32_t x = state.data.render_state.x;
                 uint32_t y = state.data.render_state.y;
-                uint32_t color = tracer_main(state.cam_data, x + state.cam_data.top_left_x, y + state.cam_data.top_left_y);
+                uint32_t tracer_x = x + state.cam_data.top_left_x;
+                uint32_t tracer_y = y + state.cam_data.top_left_y;
+                printf("Rendering pixel (%u, %u)\n", tracer_x, tracer_y);
+                uint32_t color = tracer_main(state.cam_data, tracer_x, tracer_y);
+
                 //write color to framebuffer
                 uint32_t fb_width;
                 uint32_t fb_height;
@@ -154,6 +177,12 @@ void client_main() {
                 uint32_t draw_y = y;
                 draw_pixel(draw_x, draw_y, color);
 
+                uint32_t offset = (y * state.cam_data.region_width + x) * 4;
+                if (offset + 4 > state.cam_data.region_width * state.cam_data.region_height * 4) {
+                    break; //do nothing
+                }
+                memcpy(pixel_buffer + offset, &color, 4);
+
                 state.data.render_state.x++;
                 if (state.data.render_state.x >= state.cam_data.region_width) {
                     state.data.render_state.x = 0;
@@ -161,13 +190,33 @@ void client_main() {
                     if (state.data.render_state.y >= state.cam_data.region_height) {
                         printf("Finished rendering region (%u, %u)\n", state.cam_data.top_left_x, state.cam_data.top_left_y);
                         state.state = SENDING_RENDER;
+                        state.data.sending_render_state.offset = 0;
                     }
                 }
 
                 break;
             };
             case SENDING_RENDER: {
-                panic("Not implemented");
+                if (state.data.sending_render_state.offset >= state.cam_data.region_width * state.cam_data.region_height * 4) {
+                    break; //nothing to send
+                }
+
+                Message msg = {};
+                msg.magic = 0xDEADBEEF;
+                msg.type = DATA_FINISHED;
+                msg.payload.data_finished.x = state.cam_data.top_left_x;
+                msg.payload.data_finished.y = state.cam_data.top_left_y;
+                msg.payload.data_finished.width = state.cam_data.region_width;
+                msg.payload.data_finished.height = state.cam_data.region_height;
+                msg.payload.data_finished.offset = state.data.sending_render_state.offset;
+                uint32_t remaining_bytes = state.cam_data.region_width * state.cam_data.region_height * 4 - state.data.sending_render_state.offset;
+                uint32_t chunk_size = remaining_bytes > 512 ? 512 : remaining_bytes;
+                msg.payload.data_finished.length = chunk_size;
+                memcpy(msg.payload.data_finished.data, pixel_buffer + state.data.sending_render_state.offset, chunk_size);
+
+                uint32_t msg_size = get_message_size(&msg);
+                send_udp((uint8_t *)&msg, msg_size, (uint8_t[])SERVER_IP_BYTES, PORT);
+                state.data.sending_render_state.offset += chunk_size;
             }
         }
     }

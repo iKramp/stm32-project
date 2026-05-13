@@ -12,7 +12,8 @@ enum MessageType {
     DATA_RESPONSE = 4,
     CAMDATA_RESPONSE = 5,
     DATA_FINISHED = 6,
-    HELLO = 7,
+    DATA_FINISHED_RESPONSE = 7,
+    HELLO = 8,
     NUM_MESSAGE_TYPES
 };
 
@@ -41,6 +42,10 @@ struct DataFinishedMessage {
     uint32_t length;
     uint8_t data[512]; //leave room for network headers
 };
+struct DataFinishedResponseMessage {
+    uint8_t success;
+    uint32_t expected_offset;
+};
 struct HelloMessage {};
 
 struct Message {
@@ -54,6 +59,7 @@ struct Message {
         struct DataResponseMessage data_response;
         struct CamdataResponseMessage region_response;
         struct DataFinishedMessage data_finished;
+        struct DataFinishedResponseMessage data_finished_response;
         struct HelloMessage hello;
     } payload;
 };

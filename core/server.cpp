@@ -16,6 +16,7 @@ extern "C" {
 
 static struct ClientData clients[10];
 static enum RegionState regions[10][10];
+static uint32_t region_received_bytes[10][10];
 
 uint8_t calculate_hash_server(uint8_t *data, uint32_t length) {
     //simple xor hash for testing
@@ -88,6 +89,7 @@ void handle_request_camdata(struct Message *msg, uint8_t *src_ip, uint16_t src_p
                 for (int x = 0; x < 10; x++) {
                     if (regions[y][x] == NOT_SENT) {
                         regions[y][x] = SENT;
+                        region_received_bytes[y][x] = 0;
                         region_x = x;
                         region_y = y;
                         goto region_found;
@@ -128,19 +130,67 @@ void handle_request_camdata(struct Message *msg, uint8_t *src_ip, uint16_t src_p
 }
 
 void handle_data_finished(struct Message *msg, uint8_t *src_ip, uint16_t src_port) {
-    printf("Received data finished message from client: %d.%d.%d.%d:%d\n", src_ip[0], src_ip[1], src_ip[2], src_ip[3], src_port);
-     //find client and mark region as finished
-    for (auto &client : clients) {
-        if (client.valid && memcmp(client.ip, src_ip, 4) == 0 && client.port == src_port) {
-            uint8_t region_x = client.region_x;
-            uint8_t region_y = client.region_y;
-            if (region_x < 10 && region_y < 10) {
-                regions[region_y][region_x] = FINISHED;
-                printf("Marked region (%d, %d) as finished\n", region_x, region_y);
-            }
-            client.rendering = 0;
-            return;
+    uint32_t x = msg->payload.data_finished.x;
+    uint32_t y = msg->payload.data_finished.y;
+    uint32_t width = msg->payload.data_finished.width;
+    uint32_t height = msg->payload.data_finished.height;
+    uint32_t offset = msg->payload.data_finished.offset;
+    uint32_t length = msg->payload.data_finished.length;
+
+    uint32_t region_x = x / width;
+    uint32_t region_y = y / height;
+
+    uint32_t expected_offset = region_received_bytes[region_y][region_x];
+
+    if (offset != expected_offset) {
+        if (offset < expected_offset) {
+            return; //duplicate packet, ignore
         }
+
+        //send error response with expected offset
+        struct Message response_msg = {};
+        response_msg.magic = 0xDEADBEEF;
+        response_msg.type = DATA_FINISHED_RESPONSE;
+        response_msg.payload.data_finished_response.success = 0;
+        response_msg.payload.data_finished_response.expected_offset = expected_offset;
+
+        uint32_t msg_size = get_message_size(&response_msg);
+        send_udp((uint8_t *)&response_msg, msg_size, src_ip, src_port);
+        printf("Received out of order data finished for region (%d, %d), expected offset: %u, got offset: %u\n", region_x, region_y, expected_offset, offset);
+        return;
+    }
+
+    //write data to scene data buffer
+    for (int i = offset; i < offset + length; i += 4) {
+        //calculate x and y from i
+        uint32_t pixel_index = i / 4;
+        uint32_t pixel_x = pixel_index % width;
+        uint32_t pixel_y = pixel_index / width;
+        uint32_t fb_x = x + pixel_x;
+        uint32_t fb_y = y + pixel_y;
+        uint32_t fb_width, fb_height;
+        get_fb_dimensions(&fb_width, &fb_height);
+        if (fb_x >= fb_width || fb_y >= fb_height) {
+            continue; //out of bounds, ignore
+        }
+        draw_pixel(fb_x, fb_y, *(uint32_t *)(msg->payload.data_finished.data + (i - offset)));
+    }
+
+    uint8_t finished = offset + length >= width * height * 4;
+    if (finished) {
+        printf("Finished receiving rendered data for region (%d, %d)\n", region_x, region_y);
+        regions[region_y][region_x] = FINISHED;
+
+        //send success response
+        struct Message response_msg = {};
+        response_msg.magic = 0xDEADBEEF;
+        response_msg.type = DATA_FINISHED_RESPONSE;
+        response_msg.payload.data_finished_response.success = 1;
+
+        uint32_t msg_size = get_message_size(&response_msg);
+        send_udp((uint8_t *)&response_msg, msg_size, src_ip, src_port);
+    } else {
+        region_received_bytes[region_y][region_x] += length;
     }
 }
 
@@ -207,6 +257,10 @@ void handle_client(struct ClientData *client) {
 
     if (get_time() - client->last_active > 10000) { //5 seconds timeout
         client->valid = 0; //remove client
+        if (client->rendering) {
+            regions[client->region_y][client->region_x] = NOT_SENT; //mark region as not sent so it can be reassigned to another client
+        }
+
         printf("Client timed out: %d.%d.%d.%d:%d\n", client->ip[0], client->ip[1], client->ip[2], client->ip[3], client->port);
         return;
     }

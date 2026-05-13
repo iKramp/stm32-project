@@ -29,11 +29,14 @@ uint32_t get_inner_message_size(struct Message *msg) {
             }
             return sizeof(struct DataFinishedMessage) - 512 + data_length;
         }
+        case DATA_FINISHED_RESPONSE:
+            return sizeof(struct DataFinishedResponseMessage);
         case HELLO:
             return sizeof(struct HelloMessage);
         default:
-            return 0;
+            panic("invalid message type");
     }
+    return 0; //unreachable
 }
 
 uint32_t get_message_size(struct Message *msg) {
