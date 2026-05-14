@@ -32,9 +32,9 @@ void platform_init(uint8_t server) {
     clear_framebuffer(0xFF000000);
     init_display();
 
-    // init_mpu();
-    // enable_caches();
-    //
+    init_mpu();
+    enable_caches();
+
     init_ethernet();
 
     set_scene_data((uint8_t *)QSPI_ADDR, _get_scene_data_size());

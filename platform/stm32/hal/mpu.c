@@ -29,7 +29,7 @@ void set_mpu_region(
     *MPU_RASR =
         attributes << 16 | //attributes in upper half
         (subregion_disable_mask << 8) |
-        (size_power - 1) |
+        ((size_power - 1) << 1) |
         1; //enable region
 
 }
@@ -74,7 +74,7 @@ void init_mpu() {
         (0 << 0); //not bufferable
 
     uint16_t fb_attrs = 
-        (1 << 12) | //executable
+        (1 << 12) | //execute disable
         (0b011 << 8) | //privileged read/write, unprivileged read/write
         (0b000 << 3) | //TEX = 0 (Strongly ordered)
         (1 << 2) | //shareable
@@ -84,7 +84,7 @@ void init_mpu() {
     uint16_t eth_buf_attrs = 
         (1 << 12) | //execute disable
         (0b011 << 8) | //privileged read/write, unprivileged read/write
-        (0b000 << 3) | //TEX = 0 (Strongly ordered)
+        (0b001 << 3) | //TEX = 1
         (1 << 2) | //shareable
         (0 << 1) | //not cacheable
         (0 << 0); //not bufferable
@@ -118,6 +118,4 @@ void init_mpu() {
 
     //lastly, enable MPU
     *MPU_CTRL = mpu_ctrl | 0b111;
-
-    panic("MPU initialized");
 }

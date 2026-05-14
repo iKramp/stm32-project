@@ -3,11 +3,13 @@
 #include "client.hpp"
 #include "ray_tracer/scene_data.hpp"
 #include "ray_tracer/mod.hpp"
+#include <stdio.h>
 extern "C" {
     #include <stdint.h>
     #include "../include/settings.h"
     #include "../include/platform_specific.h"
     #include "../include/draw.h"
+    #include "../include/clock.h"
     #include "scene_data.h"
 }
 #include "net/packet_handler.hpp"
@@ -45,6 +47,15 @@ int main(void) {
     // panic("Initializing Ethernet...");
 
     init_packet_handlers(SERVER);
+
+    uint32_t now = get_time();
+    uint32_t state = 0xDEADBEEF;
+    for (int i = 0; i < 1000; i++) {
+        printf("%d", state);
+        state = scramble(state);
+    }
+    uint32_t elapsed = get_time() - now;
+    printf("Scrambled 1000 numbers in %u ms\n", elapsed);
 
     // uint8_t *scene_data = get_scene_data();
     //
