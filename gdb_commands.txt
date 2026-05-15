@@ -1,4 +1,4 @@
-file build/build.elf
+file stm_build_server/build.elf
 target remote localhost:3333
 monitor reset halt
 load

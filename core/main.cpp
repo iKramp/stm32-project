@@ -44,30 +44,35 @@ int main(void) {
 
     draw_rectangle(300, 100, 100, 100, 0xFFFF0000); // Red square for testing
 
-    // panic("Initializing Ethernet...");
-
     init_packet_handlers(SERVER);
 
-    uint32_t now = get_time();
-    uint32_t state = 0xDEADBEEF;
-    for (int i = 0; i < 1000; i++) {
-        printf("%d", state);
-        state = scramble(state);
-    }
-    uint32_t elapsed = get_time() - now;
-    printf("Scrambled 1000 numbers in %u ms\n", elapsed);
+    // uint32_t now = get_time();
+    // uint32_t state = 0xDEADBEEF;
+    // for (int i = 0; i < 1000; i++) {
+    //     printf("%d", state);
+    //     state = scramble(state);
+    // }
+    // uint32_t elapsed = get_time() - now;
+    // printf("Scrambled 1000 numbers in %u ms\n", elapsed);
 
     // uint8_t *scene_data = get_scene_data();
+    // uint32_t SCALING_FACTOR = 20;
     //
     // parse_scene_data(scene_data);
     // CamData cam_data = get_cam_data();
+    // cam_data.canvas_height = 272 / SCALING_FACTOR;
+    // cam_data.canvas_width = 480 / SCALING_FACTOR;
+    //
     // uint32_t frame = 0;
     //
+    //
     // while (1) {
-    //     for(int x = 0; x < 480; x++) {
-    //         for(int y = 0; y < 272; y++) {
-    //             uint32_t color = scramble(x * 272 + y + frame);
-    //             draw_pixel(x, y, color | 0xFF000000);
+    //     for(int x = 0; x < 480 / SCALING_FACTOR; x++) {
+    //         for(int y = 0; y < 272 / SCALING_FACTOR; y++) {
+    //             uint32_t color = tracer_main(cam_data, x, y);
+    //             // uint32_t color = scramble(x * 73856093 ^ y * 19349663 ^ frame * 83492791);
+    //             // draw_pixel(x, y, color | 0xFF000000);
+    //             draw_scaled_pixel(x, y, color | 0xFF000000, SCALING_FACTOR);
     //         }
     //     }
     //     frame++;

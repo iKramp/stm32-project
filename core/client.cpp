@@ -72,6 +72,15 @@ void handle_camdata_response(struct Message *msg, uint8_t *src_ip, uint16_t src_
 void handle_data_finished_response(struct Message *msg, uint8_t *src_ip, uint16_t src_port) {
     if (msg->payload.data_finished_response.success) {
         printf("Server successfully received rendered data for region (%u, %u)\n", state.cam_data.top_left_x, state.cam_data.top_left_y);
+        //clear pixel buffer for region
+        uint32_t fb_width;
+        uint32_t fb_height;
+        get_fb_dimensions(&fb_width, &fb_height);
+        for (uint32_t i = 0; i < state.cam_data.region_width; i++) {
+            for (uint32_t j = 0; j < state.cam_data.region_height; j++) {
+                draw_pixel(i + fb_width / 2, j, 0xFF000000); //clear pixel on framebuffer
+            }
+        }
         state.state = GETTING_CAMDATA;
         state.data.camdata_reception_state.last_requested_timestamp = 0;
         state.last_packet_timestamp = get_time(); //prevent timeout
@@ -166,7 +175,6 @@ void client_main() {
                 uint32_t y = state.data.render_state.y;
                 uint32_t tracer_x = x + state.cam_data.top_left_x;
                 uint32_t tracer_y = y + state.cam_data.top_left_y;
-                printf("Rendering pixel (%u, %u)\n", tracer_x, tracer_y);
                 uint32_t color = tracer_main(state.cam_data, tracer_x, tracer_y);
 
                 //write color to framebuffer

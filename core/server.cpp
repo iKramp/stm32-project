@@ -160,7 +160,6 @@ void handle_data_finished(struct Message *msg, uint8_t *src_ip, uint16_t src_por
         return;
     }
 
-    //write data to scene data buffer
     for (int i = offset; i < offset + length; i += 4) {
         //calculate x and y from i
         uint32_t pixel_index = i / 4;

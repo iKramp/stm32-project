@@ -13,6 +13,6 @@ void draw_pixel(int x, int y, uint32_t color) {
 }
 
 void get_fb_dimensions(uint32_t *width, uint32_t *height) {
-    *width = 200;
-    *height = 200;
+    *width = 50;
+    *height = 50;
 }

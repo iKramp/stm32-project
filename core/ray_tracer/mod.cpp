@@ -15,6 +15,7 @@
 
 extern "C" {
     #include "../../include/draw.h"
+    #include "../../include/panic.h"
 }
 
 #define SCALING_FACTOR 20
@@ -30,44 +31,57 @@ extern "C" {
    - instance
  */
 
+uint8_t *round_to_boundary(uint8_t *ptr, uint8_t boundary_size) {
+    uintptr_t addr = (uintptr_t)ptr;
+    if (addr % boundary_size == 0) {
+        return ptr;
+    }
+    uintptr_t rounded_addr = (addr + boundary_size - 1) & ~(boundary_size - 1);
+    return (uint8_t *)rounded_addr;
+}
+
 void parse_scene_data(uint8_t *raw_data) {
     uint8_t *data_ptr = raw_data;
     printf("Parsing scene data at address: %p\n", raw_data);
 
+    if ((uintptr_t)data_ptr % 16 != 0) {
+        panic("Scene data is not 16-byte aligned");
+    }
+
     uint32_t vertex_buffer_size = *((uint32_t *)data_ptr);
-    data_ptr += 4;
+    data_ptr = round_to_boundary(data_ptr + 4, 16);
     Vertex *vertex_buffer = (Vertex *)data_ptr;
-    data_ptr += vertex_buffer_size;
+    data_ptr = round_to_boundary(data_ptr + vertex_buffer_size, 4);
 
     uint32_t normal_buffer_size = *((uint32_t *)data_ptr);
-    data_ptr += 4;
+    data_ptr = round_to_boundary(data_ptr + 4, 16);
     Vec3 *normal_buffer = (Vec3 *)data_ptr;
-    data_ptr += normal_buffer_size;
+    data_ptr = round_to_boundary(data_ptr + normal_buffer_size, 4);
 
     uint32_t uv_buffer_size = *((uint32_t *)data_ptr);
-    data_ptr += 4;
+    data_ptr = round_to_boundary(data_ptr + 4, 16);
     UV *uv_buffer = (UV *)data_ptr;
-    data_ptr += uv_buffer_size;
+    data_ptr = round_to_boundary(data_ptr + uv_buffer_size, 4);
 
     uint32_t triangle_buffer_size = *((uint32_t *)data_ptr);
-    data_ptr += 4;
+    data_ptr = round_to_boundary(data_ptr + 4, 16);
     Triangle *triangle_buffer = (Triangle *)data_ptr;
-    data_ptr += triangle_buffer_size;
+    data_ptr = round_to_boundary(data_ptr + triangle_buffer_size, 4);
 
     uint32_t bvh_buffer_size = *((uint32_t *)data_ptr);
-    data_ptr += 4;
+    data_ptr = round_to_boundary(data_ptr + 4, 16);
     BVHNode *bvh_buffer = (BVHNode *)data_ptr;
-    data_ptr += bvh_buffer_size;
+    data_ptr = round_to_boundary(data_ptr + bvh_buffer_size, 4);
 
     uint32_t object_buffer_size = *((uint32_t *)data_ptr);
-    data_ptr += 4;
+    data_ptr = round_to_boundary(data_ptr + 4, 16);
     Object *object_buffer = (Object *)data_ptr;
-    data_ptr += object_buffer_size;
+    data_ptr = round_to_boundary(data_ptr + object_buffer_size, 4);
 
     uint32_t instance_buffer_size = *((uint32_t *)data_ptr);
-    data_ptr += 4;
+    data_ptr = round_to_boundary(data_ptr + 4, 16);
     Instance *instance_buffer = (Instance *)data_ptr;
-    data_ptr += instance_buffer_size;
+    data_ptr = round_to_boundary(data_ptr + instance_buffer_size, 4);
     uint32_t instance_count = instance_buffer_size / sizeof(Instance);
 
     SceneData scene_data;
@@ -87,12 +101,6 @@ uint32_t tracer_main(
     uint32_t x,
     uint32_t y
 ) {
-    if (x % 2 == y % 2) {
-        return 0xFF000000; //black for testing
-    } else {
-        return 0xFFFFFFFF; //white for testing
-    }
-
     uint32_t color = 0xFF000000;
     Ray cam_ray = vec_dir_from_cam(cam_data_ptr, x, y);
     Vec3 ret_col = trace_ray(cam_ray);

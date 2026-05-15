@@ -31,7 +31,7 @@ static struct FrameBufferTextInfo fb_text_info = {
 };
 
 int _write(int file, const char *ptr, int len) {
-    write_text(ptr, len);
+    // write_text(ptr, len);
     return len;
 }
 

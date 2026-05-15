@@ -1,5 +1,6 @@
 #include "../../include/platform_specific.h"
 #include "../../core/scene_data.h"
+#include "hal/fpu.h"
 #include "hal/mpu.h"
 #include "peripherals/clock.h"
 #include "peripherals/fmc.h"
@@ -11,18 +12,31 @@
 
 #define QSPI_ADDR 0x90000000
 
+uint8_t *round_to_boundary(uint8_t *ptr, uint8_t boundary_size) {
+    uintptr_t addr = (uintptr_t)ptr;
+    if (addr % boundary_size == 0) {
+        return ptr;
+    }
+    uintptr_t rounded_addr = (addr + boundary_size - 1) & ~(boundary_size - 1);
+    return (uint8_t *)rounded_addr;
+}
+
 uint32_t _get_scene_data_size() {
     uint8_t *data_ptr = (uint8_t *)QSPI_ADDR;
+    uint8_t *original_ptr = data_ptr;
     uint32_t total_size = 0;
     for (int i = 0; i < 7; i++) {
         uint32_t buffer_size = *((uint32_t *)data_ptr);
-        total_size += 4 + buffer_size; //size field + buffer data
-        data_ptr += 4 + buffer_size;
+        data_ptr = round_to_boundary(data_ptr + 4, 16);
+        data_ptr = round_to_boundary(data_ptr + buffer_size, 4);
+
     }
+    total_size = data_ptr - original_ptr;
     return total_size;
 }
 
 void platform_init(uint8_t server) {
+    init_fpu();
 
     init_clock();
 

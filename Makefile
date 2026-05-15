@@ -24,6 +24,8 @@ STMCFLAGS = \
 	-ffreestanding \
 	-fdata-sections \
 	-ffunction-sections \
+	-mfpu=fpv5-sp-d16 \
+	-mfloat-abi=hard \
 	$(COMMON_INC)
 
 STMCXXFLAGS = \
@@ -37,6 +39,8 @@ STMCXXFLAGS = \
 STMLDFLAGS = \
 	-mcpu=cortex-m7 \
 	-mthumb \
+	-mfpu=fpv5-sp-d16 \
+	-mfloat-abi=hard \
 	-TSTM32H750XBHX_FLASH.ld \
 	-nostdlib \
 	-Wl,--gc-sections \
